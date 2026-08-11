@@ -2,7 +2,7 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Docker%20%7C%20Caddy-blue.svg)](#)
 [![Games](https://img.shields.io/badge/Games-HTML5%20%2F%20JavaScript-orange.svg)](#)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](#)
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](LICENSE)
 
 An extensible, containerized web game console platform and dynamic reverse-proxy gateway for hosting, orchestrating, and launching HTML5/JavaScript games.
 
@@ -193,4 +193,8 @@ The `./platform.sh` utility manages the platform and game workloads:
 
 ## 📄 License
 
-The platform infrastructure, scripts, and portal are licensed under the MIT License. Hosted game submodules maintain their respective open-source licenses.
+This platform infrastructure, scripts, and portal are licensed under the **[Mozilla Public License 2.0 (MPL-2.0)](LICENSE)**.
+
+> [!NOTE]
+> **Third-Party Games Licensing**: The hosted games located in [`games/`](games/) are independent third-party open-source projects included as Git submodules. They are **not** covered by this platform's MPL-2.0 license; each game retains and is governed by its own independent license and copyright (e.g., GPL-3.0, MPL-2.0, MIT, etc.). Please refer to each individual game repository in [`games/`](games/) for its respective licensing terms.
+
