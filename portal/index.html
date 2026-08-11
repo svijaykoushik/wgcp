@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML5 Arcade Portal - Games Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0c14;
+      --bg-secondary: #121624;
+      --card-bg: rgba(22, 28, 48, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --accent-purple: #818cf8;
+      --accent-cyan: #38bdf8;
+      --accent-green: #34d399;
+      --accent-orange: #fb923c;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 70%, rgba(56, 189, 248, 0.12) 0%, transparent 45%);
+      background-attachment: fixed;
+    }
+
+    body.launcher-active {
+      overflow: hidden;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    #library-view {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    header {
+      padding: 3rem 2rem 2rem;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: var(--accent-purple);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 650px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 2rem;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 25px rgba(99, 102, 241, 0.15);
+    }
+
+    .game-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .icon-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      font-weight: 800;
+      box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.1);
+    }
+
+    .card-header .type-pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+    }
+
+    .pill-single {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .pill-multi {
+      background: rgba(52, 211, 153, 0.12);
+      color: var(--accent-green);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .game-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .game-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+      min-height: 48px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      color: #cbd5e1;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #ffffff;
+      border: none;
+      font-family: inherit;
+      padding: 0.85rem 1.25rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .route-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #64748b;
+      font-size: 0.9rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: auto;
+    }
+
+    .network-badge {
+      display: inline-block;
+      margin-top: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent-purple);
+    }
+
+    /* Launcher Console Screen */
+    #launcher-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .launcher-viewport {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #game-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #000;
+    }
+
+    /* Floating System Menu Trigger */
+    .system-menu-trigger {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10001;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(18, 22, 36, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-muted);
+      border-radius: 9999px;
+      padding: 0.4rem 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s ease;
+      opacity: 0.35;
+    }
+
+    .system-menu-trigger:hover {
+      opacity: 1;
+      background: rgba(18, 22, 36, 0.95);
+      color: var(--text-main);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Decoupled System Menu Overlay */
+    .system-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .system-overlay-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 7, 10, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .system-overlay-panel {
+      position: relative;
+      background: rgba(22, 28, 48, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(99, 102, 241, 0.2);
+      backdrop-filter: blur(24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      animation: overlayPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes overlayPop {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .system-overlay-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .system-overlay-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
+    }
+
+    .system-overlay-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.35rem;
+    }
+
+    .system-overlay-genre {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .system-overlay-status {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .system-overlay-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .overlay-btn {
+      width: 100%;
+      padding: 0.9rem 1.25rem;
+      font-size: 1rem;
+      border-radius: 14px;
+    }
+
+    .btn-danger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-family: inherit;
+      padding: 0.9rem 1.25rem;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger:active {
+      transform: translateY(0);
+    }
+
+    .system-overlay-footer {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Library / Catalog View -->
+  <div id="library-view">
+    <header>
+      <div class="badge-top">
+        <span class="badge-dot"></span> Caddy Reverse Proxy &bull; Isolated Workload Networks
+      </div>
+      <h1>HTML5 Arcade Portal</h1>
+      <p class="subtitle">A self-hosted arcade platform serving open-source HTML5 games securely isolated in containerized networks.</p>
+    </header>
+
+    <main>
+      <div class="grid" id="game-grid">
+        <!-- Dynamically populated from registry -->
+      </div>
+    </main>
+
+    <footer>
+      Central Platform Ingress: <strong>Caddy (:80)</strong> &bull; Generated Registry Driven
+      <div class="network-badge">Strict per-game workload isolation enabled</div>
+    </footer>
+  </div>
+
+  <!-- Full-Screen Launcher Console View (Hidden by default) -->
+  <div id="launcher-screen" class="hidden">
+    <div class="launcher-viewport">
+      <iframe
+        id="game-iframe"
+        src="about:blank"
+        allow="autoplay; fullscreen; gamepad; focus-without-user-activation; accelerometer; gyroscope; clipboard-read; clipboard-write"
+      ></iframe>
+    </div>
+
+    <!-- Floating System Menu Shortcut Button -->
+    <button id="system-menu-trigger" class="system-menu-trigger" type="button" title="System Menu (ESC)">
+      <span>⚙ System Menu</span>
+    </button>
+
+    <!-- Decoupled System Menu Overlay (Hidden by default) -->
+    <div id="system-overlay" class="system-overlay hidden">
+      <div class="system-overlay-backdrop"></div>
+      <div class="system-overlay-panel">
+        <div class="system-overlay-header">
+          <div class="system-overlay-icon" id="system-game-icon">🎮</div>
+          <h2 class="system-overlay-title" id="system-game-title">Game Title</h2>
+          <span class="system-overlay-genre" id="system-game-genre">Genre</span>
+        </div>
+        <div class="system-overlay-body">
+          <p class="system-overlay-status">Game Session Active</p>
+          <div class="system-overlay-actions">
+            <button id="system-resume-btn" class="btn-primary overlay-btn" type="button">
+              ▶ Resume Game
+            </button>
+            <button id="system-exit-btn" class="btn-danger overlay-btn" type="button">
+              ⏻ Exit to Library
+            </button>
+          </div>
+        </div>
+        <div class="system-overlay-footer">
+          <span>Press <kbd class="kbd-key">ESC</kbd> to toggle menu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="launcher.js"></script>
+  <script>
+    const registeredGames = new Map();
+
+    async function loadCatalog() {
+      const grid = document.getElementById('game-grid');
+      try {
+        const res = await fetch('/api/registry.json');
+        const data = await res.json();
+        const games = data.games || [];
+        
+        registeredGames.clear();
+        games.forEach(game => registeredGames.set(game.id, game));
+
+        if (games.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: var(--card-bg); border: 1px dashed var(--card-border); border-radius: 20px;">
+              <h3 style="font-size: 1.5rem; color: var(--text-muted); margin-bottom: 0.5rem;">No games currently registered</h3>
+              <p style="color: #64748b;">Use <code>./platform.sh game add ./games/&lt;game&gt;</code> to register a hosted game.</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = games.map(game => {
+          const meta = game.metadata || {};
+          const hosting = game.hosting || {};
+          const runtime = game.runtime || {};
+          const isMulti = meta.multiplayer ? 'pill-multi' : 'pill-single';
+          const multiText = meta.multiplayer ? 'Multiplayer' : 'Singleplayer';
+          const icon = meta.icon || '🎮';
+          const hostname = hosting.hostname || (game.id + '.localhost');
+          
+          return `
+            <div class="game-card">
+              <div>
+                <div class="card-header">
+                  <div class="icon-box" style="background: linear-gradient(135deg, #6366f1, #3b82f6); color: #fff;">
+                    ${icon}
+                  </div>
+                  <span class="type-pill ${isMulti}">${multiText}</span>
+                </div>
+                <h2 class="game-title">${game.name || game.id}</h2>
+                <p class="game-desc">${meta.description || ''}</p>
+                <div class="tags">
+                  <span class="tag">${meta.genre || 'HTML5'}</span>
+                  ${meta.license ? `<span class="tag">${meta.license}</span>` : ''}
+                </div>
+              </div>
+              <div class="btn-group">
+                <button type="button" class="btn-primary btn-launch" data-game-id="${game.id}">
+                  ▶ Launch ${game.name || game.id}
+                </button>
+                <span class="route-info">Proxy: ${hostname} &rarr; ${runtime.service || 'workload'}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to load game registry:', err);
+        grid.innerHTML = `<p style="color: #ef4444; text-align: center; grid-column: 1/-1;">Error loading game catalog from platform registry.</p>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      GameLauncher.init();
+      loadCatalog();
+
+      const grid = document.getElementById('game-grid');
+      grid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-launch');
+        if (btn) {
+          const gameId = btn.getAttribute('data-game-id');
+          const game = registeredGames.get(gameId);
+          if (game) {
+            GameLauncher.launch(game);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

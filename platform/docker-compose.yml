@@ -1,0 +1,17 @@
+services:
+  caddy:
+    image: caddy:alpine
+    container_name: games-caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../portal:/srv/portal:ro
+      - ./registry:/srv/registry:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,36 @@
+{
+    # Admin API enabled on default port 2019 for reload commands
+}
+
+http://localhost {
+    root * /srv/portal
+    file_server
+
+    handle /api/manifests/* {
+        root * /srv/registry
+        rewrite * /games.json
+        file_server
+    }
+
+    handle /api/registry.json {
+        root * /srv/registry
+        rewrite * /games.json
+        file_server
+    }
+}
+
+http://browserquest.localhost {
+    reverse_proxy browserquest-client:80
+}
+
+http://adarkroom.localhost {
+    reverse_proxy game-adarkroom:80
+}
+
+http://2048.localhost {
+    reverse_proxy game-2048:80
+}
+
+http://hextris.localhost {
+    reverse_proxy game-hextris:80
+}

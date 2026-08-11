@@ -1,0 +1,88 @@
+{
+  "games": [
+    {
+      "id": "browserquest",
+      "name": "BrowserQuest",
+      "runtime": {
+        "type": "docker",
+        "service": "browserquest-client",
+        "port": 80
+      },
+      "hosting": {
+        "hostname": "browserquest.localhost"
+      },
+      "metadata": {
+        "genre": "MMORPG",
+        "developer": "Little Workshop / Mozilla",
+        "license": "MPL-2.0 / CC-BY-SA 3.0",
+        "upstream": "https://github.com/mozilla/BrowserQuest",
+        "multiplayer": true,
+        "icon": "\u2694\ufe0f",
+        "description": "A multiplayer adventure RPG experiment by Mozilla powered by HTML5 Canvas and WebSockets."
+      }
+    },
+    {
+      "id": "a-dark-room",
+      "name": "A Dark Room",
+      "runtime": {
+        "type": "docker",
+        "service": "game-adarkroom",
+        "port": 80
+      },
+      "hosting": {
+        "hostname": "adarkroom.localhost"
+      },
+      "metadata": {
+        "genre": "Text Adventure / Incremental RPG",
+        "developer": "Michael Townsend (Doublespeak Games)",
+        "license": "GPL-3.0",
+        "upstream": "https://github.com/doublespeakgames/adarkroom",
+        "multiplayer": false,
+        "icon": "\ud83d\udd25",
+        "description": "Minimalist text-based RPG and survival management. Awake in a cold room, light the fire, and explore."
+      }
+    },
+    {
+      "id": "2048",
+      "name": 2048,
+      "runtime": {
+        "type": "docker",
+        "service": "game-2048",
+        "port": 80
+      },
+      "hosting": {
+        "hostname": "2048.localhost"
+      },
+      "metadata": {
+        "genre": "Puzzle",
+        "developer": "Gabriele Cirulli",
+        "license": "MIT",
+        "upstream": "https://github.com/gabrielecirulli/2048",
+        "multiplayer": false,
+        "icon": "2048",
+        "description": "The iconic sliding tile puzzle game. Join matching numbers to reach the legendary 2048 tile."
+      }
+    },
+    {
+      "id": "hextris",
+      "name": "Hextris",
+      "runtime": {
+        "type": "docker",
+        "service": "game-hextris",
+        "port": 80
+      },
+      "hosting": {
+        "hostname": "hextris.localhost"
+      },
+      "metadata": {
+        "genre": "Arcade Puzzle",
+        "developer": "Logan Engstrom, Garrett Finucane, Noah Moroze, Michael Yang",
+        "license": "GPL-3.0-or-later",
+        "upstream": "https://github.com/Hextris/hextris",
+        "multiplayer": false,
+        "icon": "\u2b21",
+        "description": "Addictive hexagonal puzzle game inspired by Tetris. Rotate the hexagon to match 3+ blocks of the same color."
+      }
+    }
+  ]
+}

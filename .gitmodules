@@ -1,0 +1,16 @@
+[submodule "games/2048"]
+	path = games/2048
+	url = git@github.com:svijaykoushik/2048.git
+	branch = master
+[submodule "games/adarkroom"]
+	path = games/adarkroom
+	url = git@github.com:svijaykoushik/adarkroom.git
+	branch = main
+[submodule "games/BrowserQuest"]
+	path = games/BrowserQuest
+	url = git@github.com:svijaykoushik/BrowserQuest.git
+	branch = master
+[submodule "games/hextris"]
+	path = games/hextris
+	url = git@github.com:svijaykoushik/hextris.git
+	branch = gh-pages

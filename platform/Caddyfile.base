@@ -1,0 +1,20 @@
+{
+    # Admin API enabled on default port 2019 for reload commands
+}
+
+http://localhost {
+    root * /srv/portal
+    file_server
+
+    handle /api/manifests/* {
+        root * /srv/registry
+        rewrite * /games.json
+        file_server
+    }
+
+    handle /api/registry.json {
+        root * /srv/registry
+        rewrite * /games.json
+        file_server
+    }
+}
