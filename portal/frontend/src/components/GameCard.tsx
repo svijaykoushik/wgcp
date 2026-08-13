@@ -4,7 +4,6 @@ import { usePressAnimation } from '../hooks/usePressAnimation';
 
 interface GameCardProps {
   game: Game;
-  isFocused: boolean;
   variant: 'library' | 'catalogue';
   inLibrary?: boolean;
   index: number;
@@ -15,7 +14,6 @@ interface GameCardProps {
 
 export function GameCard({
   game,
-  isFocused,
   variant,
   inLibrary,
   index,
@@ -24,42 +22,17 @@ export function GameCard({
   onRemove,
 }: GameCardProps) {
   const isMulti = game.metadata?.multiplayer;
-  const { triggerPress, dataPressing } = usePressAnimation();
 
-  const handlePrimaryAction = (e: React.MouseEvent | React.KeyboardEvent) => {
-    // Avoid double trigger from bubbling
-    e.stopPropagation();
-    if (variant === 'library') {
-      if (onPlay) triggerPress(onPlay);
-    } else {
-      if (inLibrary) {
-        if (onRemove) triggerPress(onRemove);
-      } else {
-        if (onAdd) triggerPress(onAdd);
-      }
-    }
-  };
+  // Track press animations separately for each button to avoid confusion
+  const playPress = usePressAnimation();
+  const removePress = usePressAnimation();
+  const addPress = usePressAnimation();
 
   return (
     <div
-      data-focusable={game.id}
-      data-focused={isFocused}
-      data-pressing={dataPressing}
-      tabIndex={0}
-      onClick={handlePrimaryAction}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          handlePrimaryAction(e);
-        }
-      }}
-      className={`console-focusable console-pressable group flex flex-col justify-between p-6 bg-bg-secondary/70 border rounded-2xl cursor-pointer relative overflow-hidden card-stagger-enter select-none ${
-        isFocused
-          ? 'border-focus-ring shadow-2xl scale-[1.03]'
-          : 'border-card-border hover:border-card-hover-border hover:shadow-2xl'
-      }`}
+      className="group flex flex-col justify-between p-6 bg-bg-secondary/70 border border-card-border rounded-2xl relative overflow-hidden card-stagger-enter select-none transition-all duration-300 ease-out focus-within:border-focus-ring focus-within:shadow-2xl focus-within:shadow-focus-glow focus-within:scale-[1.03]"
       style={{
         '--stagger-index': index,
-        transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
       } as React.CSSProperties}
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -102,19 +75,23 @@ export function GameCard({
           <>
             <button
               type="button"
-              tabIndex={-1}
-              className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+              data-focusable={`play-${game.id}`}
+              data-pressing={playPress.dataPressing}
+              onClick={() => {
+                if (onPlay) playPress.triggerPress(onPlay);
+              }}
+              className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer console-focusable console-pressable"
             >
               ▶ Play Game
             </button>
             <button
               type="button"
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onRemove) onRemove();
+              data-focusable={`remove-${game.id}`}
+              data-pressing={removePress.dataPressing}
+              onClick={() => {
+                if (onRemove) removePress.triggerPress(onRemove);
               }}
-              className="w-full py-1.5 text-xs text-text-muted hover:text-red-400 font-semibold transition-colors cursor-pointer"
+              className="w-full py-1.5 text-xs text-text-muted hover:text-red-400 font-semibold transition-colors cursor-pointer console-focusable console-pressable"
             >
               Remove from Library
             </button>
@@ -128,12 +105,12 @@ export function GameCard({
                 </div>
                 <button
                   type="button"
-                  tabIndex={-1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onRemove) onRemove();
+                  data-focusable={`remove-${game.id}`}
+                  data-pressing={removePress.dataPressing}
+                  onClick={() => {
+                    if (onRemove) removePress.triggerPress(onRemove);
                   }}
-                  className="w-full py-1 text-xs text-text-muted hover:text-red-400 transition-colors cursor-pointer"
+                  className="w-full py-1 text-xs text-text-muted hover:text-red-400 transition-colors cursor-pointer console-focusable console-pressable"
                 >
                   Remove
                 </button>
@@ -141,8 +118,12 @@ export function GameCard({
             ) : (
               <button
                 type="button"
-                tabIndex={-1}
-                className="w-full py-2.5 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                data-focusable={`add-${game.id}`}
+                data-pressing={addPress.dataPressing}
+                onClick={() => {
+                  if (onAdd) addPress.triggerPress(onAdd);
+                }}
+                className="w-full py-2.5 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer console-focusable console-pressable"
               >
                 Add to Library
               </button>
@@ -153,3 +134,4 @@ export function GameCard({
     </div>
   );
 }
+export default GameCard;

@@ -1,53 +1,32 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { findNextFocusable, FocusableRect, Direction } from '../engine/SpatialEngine';
 
 interface UseSpatialNavOptions {
-  containerId: string;
   enabled?: boolean;
-  onSelect?: (id: string) => void;
-  onBack?: () => void;
-  initialFocusId?: string;
 }
 
-export function useSpatialNav({
-  containerId,
-  enabled = true,
-  onSelect,
-  onBack,
-  initialFocusId,
-}: UseSpatialNavOptions) {
-  const [focusedId, setFocusedId] = useState<string | null>(initialFocusId ?? null);
-
-  // Collect all focusable rects within the container
+export function useSpatialNav({ enabled = true }: UseSpatialNavOptions = {}) {
   const getFocusables = useCallback((): FocusableRect[] => {
-    const container = document.getElementById(containerId);
-    if (!container) return [];
-    const elements = container.querySelectorAll('[data-focusable]');
-    return Array.from(elements).map((el) => {
-      const rect = el.getBoundingClientRect();
-      return {
-        id: el.getAttribute('data-focusable')!,
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        height: rect.height,
-      };
-    });
-  }, [containerId]);
-
-  // Set initial focus
-  useEffect(() => {
-    if (!enabled) return;
-    const focusables = getFocusables();
-    if (focusables.length > 0) {
-      const exists = focusables.some(f => f.id === focusedId);
-      if (!exists) {
-        setFocusedId(initialFocusId ?? focusables[0].id);
-      }
-    } else {
-      setFocusedId(null);
-    }
-  }, [enabled, containerId, initialFocusId, getFocusables, focusedId]);
+    const elements = document.querySelectorAll('[data-focusable]');
+    return Array.from(elements)
+      .filter((el) => {
+        const rect = el.getBoundingClientRect();
+        // Ensure element is visible and not disabled
+        const isVisible = rect.width > 0 && rect.height > 0;
+        const isDisabled = el.hasAttribute('disabled');
+        return isVisible && !isDisabled;
+      })
+      .map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          id: el.getAttribute('data-focusable')!,
+          top: rect.top + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+          height: rect.height,
+        };
+      });
+  }, []);
 
   // Arrow key handler
   useEffect(() => {
@@ -62,43 +41,36 @@ export function useSpatialNav({
       };
 
       const direction = dirMap[e.key];
-      if (direction) {
-        e.preventDefault();
-        const focusables = getFocusables();
-        const current = focusables.find((f) => f.id === focusedId);
-        if (!current) {
-          // Fallback: focus first element
-          if (focusables.length > 0) setFocusedId(focusables[0].id);
-          return;
-        }
-        const nextId = findNextFocusable(current, focusables, direction);
-        if (nextId) {
-          setFocusedId(nextId);
-          // Scroll into view
-          const nextEl = document.querySelector(`[data-focusable="${nextId}"]`);
-          nextEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+      if (!direction) return;
+
+      const focusables = getFocusables();
+      if (focusables.length === 0) return;
+
+      e.preventDefault();
+
+      // Find current focused element in our focusables list
+      const activeEl = document.activeElement;
+      const currentId = activeEl?.getAttribute('data-focusable');
+      const current = focusables.find((f) => f.id === currentId);
+
+      if (!current) {
+        // Fallback: focus first element with data-focusable
+        const firstEl = document.querySelector(`[data-focusable="${focusables[0].id}"]`) as HTMLElement;
+        firstEl?.focus();
+        return;
       }
 
-      if (e.key === 'Enter' || e.key === ' ') {
-        // Trigger onSelect if input elements are not focused
-        const activeTag = document.activeElement?.tagName;
-        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
-          e.preventDefault();
-          if (focusedId && onSelect) {
-            onSelect(focusedId);
-          }
+      const nextId = findNextFocusable(current, focusables, direction);
+      if (nextId) {
+        const nextEl = document.querySelector(`[data-focusable="${nextId}"]`) as HTMLElement;
+        if (nextEl) {
+          nextEl.focus();
+          nextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-      }
-
-      if (e.key === 'Escape') {
-        if (onBack) onBack();
       }
     };
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [enabled, focusedId, getFocusables, onSelect, onBack]);
-
-  return { focusedId, setFocusedId };
+  }, [enabled, getFocusables]);
 }

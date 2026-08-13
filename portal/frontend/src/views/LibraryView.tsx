@@ -1,16 +1,11 @@
-import { useEffect } from 'react';
 import { Game } from '../types';
 import { GameCard } from '../components/GameCard';
-import { useSpatialNav } from '../hooks/useSpatialNav';
 
 interface LibraryViewProps {
   games: Game[];
   onLaunch: (game: Game) => void;
   onRemove: (gameId: string) => void;
   onNavigateToCatalogue: () => void;
-  focusedElementId?: string | null;
-  setFocusedElementId: (id: string | null) => void;
-  isActive: boolean;
 }
 
 export function LibraryView({
@@ -18,50 +13,7 @@ export function LibraryView({
   onLaunch,
   onRemove,
   onNavigateToCatalogue,
-  focusedElementId,
-  setFocusedElementId,
-  isActive,
 }: LibraryViewProps) {
-  const containerId = games.length === 0 ? 'library-empty-container' : 'library-grid-container';
-
-  const { focusedId, setFocusedId } = useSpatialNav({
-    containerId,
-    enabled: isActive,
-    initialFocusId: games.length > 0 ? games[0].id : 'browse-cta',
-    onSelect: (id) => {
-      if (id === 'browse-cta') {
-        onNavigateToCatalogue();
-      } else if (id === 'add-more-cta') {
-        onNavigateToCatalogue();
-      } else {
-        const selectedGame = games.find((g) => g.id === id);
-        if (selectedGame) {
-          onLaunch(selectedGame);
-        }
-      }
-    },
-  });
-
-  // Sync spatial focused element ID to parent shell
-  useEffect(() => {
-    if (isActive) {
-      setFocusedElementId(focusedId);
-    }
-  }, [focusedId, isActive, setFocusedElementId]);
-
-  // Handle PageUp/PageDown bumper events directly in the view
-  useEffect(() => {
-    if (!isActive) return;
-    const handleBumpers = (e: KeyboardEvent) => {
-      if (e.key === 'PageDown') {
-        e.preventDefault();
-        onNavigateToCatalogue();
-      }
-    };
-    window.addEventListener('keydown', handleBumpers);
-    return () => window.removeEventListener('keydown', handleBumpers);
-  }, [isActive, onNavigateToCatalogue]);
-
   if (games.length === 0) {
     return (
       <div
@@ -76,12 +28,8 @@ export function LibraryView({
         <button
           type="button"
           data-focusable="browse-cta"
-          data-focused={focusedElementId === 'browse-cta'}
-          onFocus={() => setFocusedId('browse-cta')}
           onClick={onNavigateToCatalogue}
-          className={`px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/25 active:scale-95 console-focusable cursor-pointer ${
-            focusedElementId === 'browse-cta' ? 'ring-2 ring-focus-ring' : ''
-          }`}
+          className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/25 active:scale-95 console-focusable cursor-pointer"
         >
           Browse Catalogue
         </button>
@@ -100,12 +48,8 @@ export function LibraryView({
           type="button"
           id="add-more-cta"
           data-focusable="add-more-cta"
-          data-focused={focusedElementId === 'add-more-cta'}
-          onFocus={() => setFocusedId('add-more-cta')}
           onClick={onNavigateToCatalogue}
-          className={`px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95 console-focusable cursor-pointer ${
-            focusedElementId === 'add-more-cta' ? 'ring-2 ring-focus-ring' : ''
-          }`}
+          className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95 console-focusable cursor-pointer"
         >
           + Add More Games
         </button>
@@ -119,7 +63,6 @@ export function LibraryView({
           <GameCard
             key={game.id}
             game={game}
-            isFocused={focusedElementId === game.id}
             index={idx}
             variant="library"
             onPlay={() => onLaunch(game)}

@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
 import { Game } from '../types';
 import { GameCard } from '../components/GameCard';
-import { useSpatialNav } from '../hooks/useSpatialNav';
 
 interface CatalogueViewProps {
   games: Game[];
@@ -9,9 +7,6 @@ interface CatalogueViewProps {
   onAdd: (gameId: string) => void;
   onRemove: (gameId: string) => void;
   onBackToLibrary: () => void;
-  focusedElementId?: string | null;
-  setFocusedElementId: (id: string | null) => void;
-  isActive: boolean;
 }
 
 export function CatalogueView({
@@ -20,50 +15,7 @@ export function CatalogueView({
   onAdd,
   onRemove,
   onBackToLibrary,
-  focusedElementId,
-  setFocusedElementId,
-  isActive,
 }: CatalogueViewProps) {
-  const containerId = games.length === 0 ? 'catalogue-empty-container' : 'catalogue-grid-container';
-
-  const { focusedId, setFocusedId } = useSpatialNav({
-    containerId,
-    enabled: isActive,
-    initialFocusId: games.length > 0 ? games[0].id : 'back-library-cta',
-    onSelect: (id) => {
-      if (id === 'back-library-cta') {
-        onBackToLibrary();
-      } else {
-        const inLibrary = libraryIds.includes(id);
-        if (inLibrary) {
-          onRemove(id);
-        } else {
-          onAdd(id);
-        }
-      }
-    },
-  });
-
-  // Sync spatial focused element ID to parent shell
-  useEffect(() => {
-    if (isActive) {
-      setFocusedElementId(focusedId);
-    }
-  }, [focusedId, isActive, setFocusedElementId]);
-
-  // Handle PageUp/PageDown bumper events directly in the view
-  useEffect(() => {
-    if (!isActive) return;
-    const handleBumpers = (e: KeyboardEvent) => {
-      if (e.key === 'PageUp') {
-        e.preventDefault();
-        onBackToLibrary();
-      }
-    };
-    window.addEventListener('keydown', handleBumpers);
-    return () => window.removeEventListener('keydown', handleBumpers);
-  }, [isActive, onBackToLibrary]);
-
   if (games.length === 0) {
     return (
       <div 
@@ -74,12 +26,8 @@ export function CatalogueView({
         <button
           type="button"
           data-focusable="back-library-cta"
-          data-focused={focusedElementId === 'back-library-cta'}
-          onFocus={() => setFocusedId('back-library-cta')}
           onClick={onBackToLibrary}
-          className={`px-4 py-2 border border-card-border hover:border-indigo-500/40 text-text-main text-sm font-semibold rounded-xl transition-all console-focusable cursor-pointer ${
-            focusedElementId === 'back-library-cta' ? 'ring-2 ring-focus-ring' : ''
-          }`}
+          className="px-4 py-2 border border-card-border hover:border-indigo-500/40 text-text-main text-sm font-semibold rounded-xl transition-all console-focusable cursor-pointer"
         >
           Back to Library
         </button>
@@ -97,12 +45,8 @@ export function CatalogueView({
         <button
           type="button"
           data-focusable="back-library-cta"
-          data-focused={focusedElementId === 'back-library-cta'}
-          onFocus={() => setFocusedId('back-library-cta')}
           onClick={onBackToLibrary}
-          className={`px-4 py-2 border border-card-border hover:border-indigo-500/40 text-text-main text-sm font-semibold rounded-xl transition-all active:scale-95 console-focusable cursor-pointer ${
-            focusedElementId === 'back-library-cta' ? 'ring-2 ring-focus-ring' : ''
-          }`}
+          className="px-4 py-2 border border-card-border hover:border-indigo-500/40 text-text-main text-sm font-semibold rounded-xl transition-all active:scale-95 console-focusable cursor-pointer"
         >
           Back to Library
         </button>
@@ -118,7 +62,6 @@ export function CatalogueView({
             <GameCard
               key={game.id}
               game={game}
-              isFocused={focusedElementId === game.id}
               index={idx}
               variant="catalogue"
               inLibrary={inLibrary}

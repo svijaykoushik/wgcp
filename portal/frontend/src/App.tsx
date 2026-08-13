@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { InputProvider } from './contexts/InputContext';
 import { useGamepad } from './hooks/useGamepad';
 import { useViewTransition } from './hooks/useViewTransition';
+import { useSpatialNav } from './hooks/useSpatialNav';
 import { LoginView } from './views/LoginView';
 import { LibraryView } from './views/LibraryView';
 import { CatalogueView } from './views/CatalogueView';
@@ -30,9 +31,6 @@ export default function App() {
 
   // Launcher state
   const [activeGame, setActiveGame] = useState<Game | null>(null);
-
-  // Spatial navigation element focus tracking
-  const [focusedElementId, setFocusedElementId] = useState<string | null>(null);
 
   // 1. Restore user session on mount
   useEffect(() => {
@@ -88,6 +86,31 @@ export default function App() {
   const isInputActive = document.activeElement?.tagName === 'INPUT';
   useGamepad(!activeGame && !isInputActive);
 
+  // Bind the global spatial navigation key listeners
+  useSpatialNav({ enabled: !activeGame });
+
+  // Handle focus updates on view change or data load completion to prevent focus loss
+  useEffect(() => {
+    if (!user || activeGame || catalogLoading) return;
+    
+    // Give DOM a frame to render
+    const frame = requestAnimationFrame(() => {
+      const focusables = document.querySelectorAll('[data-focusable]');
+      if (focusables.length > 0) {
+        // Prefer content focusable elements first (play/add/browse actions), then headers
+        const contentEl = Array.from(focusables).find((el) => {
+          const id = el.getAttribute('data-focusable') || '';
+          return !id.startsWith('nav-');
+        }) as HTMLElement;
+
+        const target = contentEl || (focusables[0] as HTMLElement);
+        target?.focus();
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [currentView, user, activeGame, catalogLoading]);
+
   // PageUp / PageDown tab switching event handlers for bumper actions globally
   useEffect(() => {
     if (!user || activeGame) return;
@@ -135,7 +158,6 @@ export default function App() {
       setUser(null);
       setLibraryIds([]);
       setRegistry([]);
-      setFocusedElementId(null);
     } catch (err) {
       console.error('Logout failed:', err);
     }
@@ -223,7 +245,6 @@ export default function App() {
           onViewChange={handleViewChange}
           user={user}
           onLogout={handleLogout}
-          focusedElementId={focusedElementId}
         />
 
         <main className={`flex-1 max-w-6xl w-full mx-auto p-6 pb-24 overscan-safe ${transitionClass}`}>
@@ -239,9 +260,6 @@ export default function App() {
               onLaunch={setActiveGame}
               onRemove={removeFromLibrary}
               onNavigateToCatalogue={() => handleViewChange('catalogue')}
-              focusedElementId={focusedElementId}
-              setFocusedElementId={setFocusedElementId}
-              isActive={!activeGame}
             />
           ) : (
             <CatalogueView
@@ -250,9 +268,6 @@ export default function App() {
               onAdd={addToLibrary}
               onRemove={removeFromLibrary}
               onBackToLibrary={() => handleViewChange('library')}
-              focusedElementId={focusedElementId}
-              setFocusedElementId={setFocusedElementId}
-              isActive={!activeGame}
             />
           )}
         </main>
