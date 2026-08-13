@@ -14,3 +14,6 @@
 	path = games/hextris
 	url = git@github.com:svijaykoushik/hextris.git
 	branch = gh-pages
+[submodule "games/supertux"]
+	path = games/supertux
+	url = https://github.com/svijaykoushik/supertux

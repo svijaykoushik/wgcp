@@ -34,3 +34,7 @@ http://2048.localhost {
 http://hextris.localhost {
     reverse_proxy game-hextris:80
 }
+
+http://supertux.localhost {
+    reverse_proxy game-supertux:80
+}

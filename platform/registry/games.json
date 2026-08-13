@@ -83,6 +83,27 @@
         "icon": "\u2b21",
         "description": "Addictive hexagonal puzzle game inspired by Tetris. Rotate the hexagon to match 3+ blocks of the same color."
       }
+    },
+    {
+      "id": "supertux",
+      "name": "SuperTux",
+      "runtime": {
+        "type": "docker",
+        "service": "game-supertux",
+        "port": 80
+      },
+      "hosting": {
+        "hostname": "supertux.localhost"
+      },
+      "metadata": {
+        "genre": "2D Platformer",
+        "developer": "SuperTux Development Team",
+        "license": "GPL-3.0-or-later",
+        "upstream": "https://github.com/SuperTux/supertux/",
+        "multiplayer": false,
+        "icon": "\ud83d\udc27",
+        "description": "A free and open-source 2D side-scrolling platform game heavily inspired by Nintendo's Super Mario Bros. series"
+      }
     }
   ]
 }
