@@ -3,9 +3,6 @@
 }
 
 http://localhost {
-    root * /srv/portal
-    file_server
-
     handle /api/manifests/* {
         root * /srv/registry
         rewrite * /games.json
@@ -15,6 +12,16 @@ http://localhost {
     handle /api/registry.json {
         root * /srv/registry
         rewrite * /games.json
+        file_server
+    }
+
+    handle /api/v1/* {
+        reverse_proxy portal-backend:3000
+    }
+
+    handle {
+        root * /srv/portal
+        try_files {path} /index.html
         file_server
     }
 }

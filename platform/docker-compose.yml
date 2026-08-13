@@ -1,4 +1,25 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: portal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: portalpassword
+      POSTGRES_DB: portaldb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  portal-backend:
+    build: 
+      context: ../portal/backend
+    container_name: portal-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://portal:portalpassword@postgres:5432/portaldb
+    depends_on:
+      - postgres
+
   caddy:
     image: caddy:alpine
     container_name: games-caddy-proxy
@@ -7,7 +28,7 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ../portal:/srv/portal:ro
+      - ../portal/frontend/dist:/srv/portal:ro
       - ./registry:/srv/registry:ro
       - caddy_data:/data
       - caddy_config:/config
@@ -15,3 +36,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  postgres_data:
