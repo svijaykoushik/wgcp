@@ -39,7 +39,7 @@ graph TD
     Portal --> Registry["games.json<br>(Registry API)"]
 ```
 
-For in-depth architectural details, see [ARCHITECTURE.md](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/ARCHITECTURE.md).
+For in-depth architectural details, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
