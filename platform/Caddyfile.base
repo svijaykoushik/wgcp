@@ -20,8 +20,6 @@ http://localhost {
     }
 
     handle {
-        root * /srv/portal
-        try_files {path} /index.html
-        file_server
+        reverse_proxy portal-frontend:80
     }
 }

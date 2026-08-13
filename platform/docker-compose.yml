@@ -28,10 +28,17 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ../portal/frontend/dist:/srv/portal:ro
       - ./registry:/srv/registry:ro
       - caddy_data:/data
       - caddy_config:/config
+
+  portal-frontend:
+    build:
+      context: ../portal/frontend
+    container_name: portal-frontend
+    restart: unless-stopped
+    depends_on:
+      - portal-backend
 
 volumes:
   caddy_data:
