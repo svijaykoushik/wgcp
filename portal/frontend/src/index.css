@@ -2,10 +2,146 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Remove default focus outlines globally — we manage our own */
+  *:focus {
+    outline: none;
+  }
+
+  /* Overscan-safe root container */
+  .overscan-safe {
+    padding: 5vmin;
+  }
+
+  /* Respect prefers-reduced-motion globally */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* ═══════════════════════════════════════════════
+     FOCUS SYSTEM
+     ═══════════════════════════════════════════════ */
+
+  /* Console-grade focus ring for any focusable element */
+  .console-focusable {
+    @apply transition-all duration-200 ease-out;
+    will-change: transform, opacity;
+  }
+
+  .console-focusable:focus-visible,
+  .console-focusable[data-focused="true"] {
+    @apply ring-2 ring-focus-ring shadow-lg scale-[1.03];
+    box-shadow:
+      0 0 0 2px theme('colors.focus-ring'),
+      0 0 20px 4px theme('colors.focus-glow');
+  }
+
+  /* Focus ring variant for nav buttons (no scale, subtle ring) */
+  .console-focusable-subtle:focus-visible,
+  .console-focusable-subtle[data-focused="true"] {
+    @apply ring-2 ring-focus-ring ring-offset-2 ring-offset-bg-primary;
+  }
+
+  /* ═══════════════════════════════════════════════
+     JUICE: PRESS FEEDBACK
+     ═══════════════════════════════════════════════ */
+
+  .console-pressable:active,
+  .console-pressable[data-pressing="true"] {
+    animation: pressDown 0.1s ease-out forwards;
+  }
+
+  .console-pressable[data-pressing="release"] {
+    animation: pressUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* ═══════════════════════════════════════════════
+     JUICE: STAGGERED CARD ENTRANCE
+     ═══════════════════════════════════════════════ */
+
+  .card-stagger-enter {
+    animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--stagger-index, 0) * 50ms);
+  }
+
+  /* ═══════════════════════════════════════════════
+     JUICE: VIEW TRANSITIONS
+     ═══════════════════════════════════════════════ */
+
+  .view-transition-enter-right {
+    animation: viewEnterRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .view-transition-enter-left {
+    animation: viewEnterLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .view-exit-right {
+    animation: viewExitRight 0.25s ease-in both;
+  }
+
+  .view-exit-left {
+    animation: viewExitLeft 0.25s ease-in both;
+  }
+
+  /* ═══════════════════════════════════════════════
+     JUICE: SKELETON LOADING
+     ═══════════════════════════════════════════════ */
+
+  .skeleton {
+    @apply rounded-xl;
+    background: linear-gradient(
+      90deg,
+      #121624 25%,
+      rgba(255, 255, 255, 0.06) 50%,
+      #121624 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* ═══════════════════════════════════════════════
+     JUICE: GAME LAUNCH CEREMONY
+     ═══════════════════════════════════════════════ */
+
+  .launch-expand {
+    animation: launchExpand 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    pointer-events: none;
+  }
+
+  .launch-backdrop {
+    animation: launchBackdrop 0.6s ease-out both;
+  }
+
+  .launch-iframe-reveal {
+    animation: launchIframeReveal 0.4s ease-out 0.6s both;
+  }
+
+  /* ═══════════════════════════════════════════════
+     JUICE: OVERLAY TRANSITIONS
+     ═══════════════════════════════════════════════ */
+
+  .overlay-panel-enter {
+    animation: overlayEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .overlay-backdrop-enter {
+    animation: overlayBackdrop 0.3s ease-out both;
+  }
+}
+
 body {
   font-family: 'Outfit', sans-serif;
   background-image: 
     radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 85% 70%, rgba(56, 189, 248, 0.12) 0%, transparent 45%);
   background-attachment: fixed;
+  /* Juice: Ambient background drift */
+  animation: bgDrift 20s ease-in-out infinite alternate;
 }

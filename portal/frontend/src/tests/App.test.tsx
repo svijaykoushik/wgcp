@@ -1,6 +1,25 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import App from '../App';
+
+// Mock LaunchSequence to render instantly to avoid timeouts in tests
+vi.mock('../components/LaunchSequence', () => {
+  return {
+    default: ({ game, onComplete }: any) => {
+      React.useEffect(() => {
+        onComplete();
+      }, [onComplete]);
+      return <div>Mocked Launch Sequence for {game.name}</div>;
+    },
+    LaunchSequence: ({ game, onComplete }: any) => {
+      React.useEffect(() => {
+        onComplete();
+      }, [onComplete]);
+      return <div>Mocked Launch Sequence for {game.name}</div>;
+    }
+  };
+});
 
 describe('Frontend App flow tests', () => {
   beforeEach(() => {
@@ -17,7 +36,7 @@ describe('Frontend App flow tests', () => {
     render(<App />);
 
     // Expect loading state first
-    expect(screen.getByText(/Loading platform.../i)).toBeInTheDocument();
+    expect(screen.getByText(/LOADING PLATFORM WORKSPACE/i)).toBeInTheDocument();
 
     // Expect transitions to login
     await waitFor(() => {
