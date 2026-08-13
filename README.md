@@ -15,7 +15,7 @@ An extensible, containerized web game console platform and dynamic reverse-proxy
 ### Key Features
 
 * **Dynamic Ingress & Gateway**: Powered by Caddy to provide automatic virtual-host routing (`http://<game>.localhost`), WebSocket forwarding, and instant zero-downtime reloads.
-* **Unified Console Portal**: A sleek web portal hosted at `http://localhost` that dynamically discovers and showcases registered games with interactive launch modes.
+* **Unified Console Portal**: A console-first web portal hosted at `http://localhost` featuring spatial gamepad/keyboard navigation, cinematic motion transitions, and adaptive input prompts — dynamically discovers and showcases registered games with interactive launch modes.
 * **Declarative Game Contract (`game.yaml`)**: Adding a new game requires no changes to platform or portal code—simply declare runtime specifications and metadata.
 * **Strict Network Isolation**: Each game runs in its own isolated Docker Compose network, communicating with the outside world strictly through the gateway.
 * **Developer CLI (`platform.sh`)**: Simple single-command control for platform lifecycle and game registration.
@@ -39,7 +39,7 @@ An extensible, containerized web game console platform and dynamic reverse-proxy
                             ▼               ▼
                ┌─────────────────┐    ┌─────────────────────────────────┐
                │  Console Portal │    │     Isolated Game Workloads     │
-               │  (Static/UI)    │    │  ┌────────────┐ ┌────────────┐  │
+               │  (React/Vite)   │    │  ┌────────────┐ ┌────────────┐  │
                └────────┬────────┘    │  │ games/2048 │ │ games/...  │  │
                         │             │  └────────────┘ └────────────┘  │
                         ▼             └─────────────────────────────────┘
@@ -180,8 +180,17 @@ The `./platform.sh` utility manages the platform and game workloads:
 │       ├── remove-game.sh   # Unregistration workflow automation
 │       └── update-caddy.sh  # Dynamic Caddyfile route generator
 ├── portal/
-│   ├── index.html           # Console Portal web interface
-│   └── launcher.js          # Portal dynamic launcher and catalog renderer
+│   ├── frontend/                # Console Portal React/Vite application
+│   │   ├── src/
+│   │   │   ├── App.tsx          # Application shell with routing & providers
+│   │   │   ├── engine/          # Spatial navigation & gamepad polling engines
+│   │   │   ├── hooks/           # Custom React hooks (spatial nav, input, transitions)
+│   │   │   ├── contexts/        # Input device context provider
+│   │   │   ├── components/      # Reusable UI components (GameCard, NavBar, etc.)
+│   │   │   └── views/           # Page views (Login, Library, Catalogue, Launcher)
+│   │   ├── tailwind.config.js   # Console design tokens & animation keyframes
+│   │   └── package.json
+│   └── backend/                 # Portal API server (auth, library management)
 └── games/                   # Hosted game submodules
     ├── 2048/
     ├── adarkroom/

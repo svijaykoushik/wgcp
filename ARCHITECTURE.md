@@ -86,7 +86,14 @@ This file is **generated state**. It is programmatically updated during registra
 ---
 
 ## 7. How does the portal consume it?
-The portal (`portal/index.html`) is served by Caddy at `http://localhost`. Upon load, it makes an HTTP request to `/api/registry.json`. The portal dynamically renders the card catalog, game titles, genres, single/multiplayer badges, icons, and play buttons from this endpoint.
+The portal is a **React 18 + Vite 5 + Tailwind CSS v3** single-page application built with a console-first design system. It is served by Caddy at `http://localhost` and communicates with the backend API at `/api/v1/` for authentication and library management, and fetches the game registry from `/api/registry.json`.
+
+The portal provides:
+* **Spatial Navigation Engine**: A custom 2D nearest-neighbor focus calculator enabling gamepad D-pad and keyboard arrow navigation across the entire UI.
+* **Gamepad API Integration**: W3C Standard Gamepad polling with button mapping (A/B/X/Y, D-pad, bumpers, Start) bridged to synthetic DOM keyboard events.
+* **Console-Grade Motion System**: 16 custom CSS keyframe animations including staggered card entrances, directional view transitions, tactile press-spring feedback, a cinematic game launch sequence, shimmer skeleton loading, and ambient background drift.
+* **Adaptive Input Prompts**: Contextual bottom-bar hints that automatically switch between keyboard glyphs and gamepad glyphs based on the active input device.
+* **Full Keyboard & Touch Accessibility**: Native browser focus (`Tab`, `Shift+Tab`) coexists with spatial arrow navigation. All motion respects `prefers-reduced-motion`.
 
 ---
 
