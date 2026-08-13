@@ -24,29 +24,19 @@ An extensible, containerized web game console platform and dynamic reverse-proxy
 
 ## 🏗️ Architecture
 
-```
-                       ┌─────────────────────────┐
-                       │      Browser / User     │
-                       └────────────┬────────────┘
-                                    │
-                         port 80    ▼
-                    ┌───────────────────────────────┐
-                    │      Caddy Gateway Proxy      │
-                    │      (games-caddy-proxy)      │
-                    └───────┬───────────────┬───────┘
-                            │               │
-       http://localhost     │               │  http://<game>.localhost
-                            ▼               ▼
-               ┌─────────────────┐    ┌─────────────────────────────────┐
-               │  Console Portal │    │     Isolated Game Workloads     │
-               │  (React/Vite)   │    │  ┌────────────┐ ┌────────────┐  │
-               └────────┬────────┘    │  │ games/2048 │ │ games/...  │  │
-                        │             │  └────────────┘ └────────────┘  │
-                        ▼             └─────────────────────────────────┘
-               ┌─────────────────┐
-               │ games.json      │
-               │ (Registry API)  │
-               └─────────────────┘
+```mermaid
+graph TD
+    User["Browser / User"] -->|port 80| Caddy["Caddy Gateway Proxy<br>(games-caddy-proxy)"]
+    
+    Caddy -->|"http://localhost"| Portal["Console Portal<br>(React/Vite)"]
+    Caddy -->|"http://&lt;game&gt;.localhost"| Games["Isolated Game Workloads"]
+    
+    subgraph Games ["Isolated Game Workloads"]
+        G1["games/2048"]
+        G2["games/..."]
+    end
+    
+    Portal --> Registry["games.json<br>(Registry API)"]
 ```
 
 For in-depth architectural details, see [ARCHITECTURE.md](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/ARCHITECTURE.md).
