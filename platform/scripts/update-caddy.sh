@@ -21,13 +21,37 @@ try:
     with open(registry_file, 'r') as f:
         data = json.load(f)
 except Exception:
-    data = {"games": []}
+    data = {"games": {}}
 
-games = data.get("games", [])
+games = data.get("games", {})
+
+# Support legacy array if not migrated yet
+if isinstance(games, list):
+    games_list = games
+else:
+    games_list = []
+    for gid, gameObj in games.items():
+        # Get active/stable release or fallback
+        active_release = None
+        releases = gameObj.get("releases", {})
+        if releases:
+            # Find stable first
+            stable_releases = [r for r in releases.values() if "stable" in r.get("releaseChannels", [])]
+            if stable_releases:
+                active_release = stable_releases[0]
+            else:
+                active_release = list(releases.values())[0]
+        
+        mapped_game = {
+            "id": gid,
+            "hosting": active_release.get("hosting", {}) if active_release else gameObj.get("hosting", {}),
+            "runtime": active_release.get("runtime", {}) if active_release else gameObj.get("runtime", {})
+        }
+        games_list.append(mapped_game)
 
 seen_hosts = set()
 with open(caddy_file, 'a') as f:
-    for game in games:
+    for game in games_list:
         hostname = game.get("hosting", {}).get("hostname")
         service = game.get("runtime", {}).get("service")
         port = game.get("runtime", {}).get("port", 80)

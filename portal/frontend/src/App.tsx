@@ -12,6 +12,99 @@ import { InputPrompts } from './components/InputPrompts';
 import { SkeletonCard } from './components/SkeletonCard';
 import { Game, User } from './types';
 
+function parseRegistryV2(data: any): Game[] {
+  if (!data) return [];
+  const gamesObj = data.games || {};
+  
+  if (Array.isArray(gamesObj)) {
+    return gamesObj;
+  }
+  
+  const userLocale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
+  
+  const getLocalized = (field: any, locale: string): string => {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object') {
+      if (field[locale]) return field[locale];
+      const baseLang = locale.split('-')[0];
+      if (field[baseLang]) return field[baseLang];
+      if (field['en-US']) return field['en-US'];
+      if (field['en']) return field['en'];
+      const keys = Object.keys(field);
+      if (keys.length > 0) return field[keys[0]];
+    }
+    return String(field);
+  };
+  
+  return Object.entries(gamesObj).map(([id, gameVal]: [string, any]) => {
+    const meta = gameVal.metadata || {};
+    
+    let developer = '';
+    if (meta.developer) {
+      if (typeof meta.developer === 'string') {
+        developer = meta.developer;
+      } else if (meta.developer.name) {
+        developer = meta.developer.name;
+      }
+    }
+    
+    let genre = '';
+    if (meta.categories && Array.isArray(meta.categories)) {
+      genre = meta.categories.join(' / ');
+    } else if (meta.genre) {
+      genre = meta.genre;
+    }
+    
+    const iconField = meta.graphics?.icon || meta.icon;
+    const icon = getLocalized(iconField, userLocale) || '🎮';
+    
+    const nameField = meta.name || gameVal.name;
+    const name = getLocalized(nameField, userLocale) || id;
+    
+    const descField = meta.description || meta.summary;
+    const description = getLocalized(descField, userLocale);
+    
+    let activeRelease: any = null;
+    const releases = gameVal.releases || {};
+    const releaseEntries = Object.entries(releases);
+    if (releaseEntries.length > 0) {
+      const stableRelease = releaseEntries.find(([_, rel]: [string, any]) => 
+        Array.isArray(rel.releaseChannels) && rel.releaseChannels.includes('stable')
+      );
+      if (stableRelease) {
+        activeRelease = stableRelease[1];
+      } else {
+        activeRelease = releaseEntries[0][1];
+      }
+    }
+    
+    const hosting = activeRelease?.hosting || gameVal.hosting || {};
+    const runtime = activeRelease?.runtime || gameVal.runtime || {};
+    
+    return {
+      id,
+      name,
+      url: gameVal.url,
+      hosting: {
+        hostname: hosting.hostname
+      },
+      runtime: {
+        service: runtime.service,
+        port: runtime.port
+      },
+      metadata: {
+        description,
+        developer,
+        genre,
+        license: meta.license,
+        multiplayer: meta.multiplayer,
+        icon
+      }
+    };
+  });
+}
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +155,7 @@ export default function App() {
         let games: Game[] = [];
         if (regRes.ok) {
           const data = await regRes.json();
-          games = data.games || [];
+          games = parseRegistryV2(data);
           setRegistry(games);
         }
 

@@ -24,10 +24,17 @@ try:
     with open(registry_file, 'r') as f:
         registry = json.load(f)
 except Exception:
-    registry = {"games": []}
+    registry = {"games": {}}
 
-games = registry.get("games", [])
-registry["games"] = [g for g in games if str(g.get("id")) != str(game_id)]
+# Migrate/support legacy list format on-the-fly if needed
+games = registry.get("games", {})
+if isinstance(games, list):
+    games = {g.get("id"): g for g in games if g.get("id")}
+
+if game_id in games:
+    del games[game_id]
+
+registry["games"] = games
 
 with open(registry_file, 'w') as f:
     json.dump(registry, f, indent=2)

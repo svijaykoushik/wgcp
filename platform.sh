@@ -35,11 +35,14 @@ case "$COMMAND" in
 import sys, json, subprocess
 try:
     data = json.load(open(sys.argv[1]))
-    for game in data.get("games", []):
-        gid = game.get("id")
-        if gid:
-            net = f"{gid}_default"
-            subprocess.run(["docker", "network", "connect", net, "games-caddy-proxy"], stderr=subprocess.DEVNULL)
+    games = data.get("games", {})
+    if isinstance(games, list):
+        gids = [g.get("id") for g in games if g.get("id")]
+    else:
+        gids = list(games.keys())
+    for gid in gids:
+        net = f"{gid}_default"
+        subprocess.run(["docker", "network", "connect", net, "games-caddy-proxy"], stderr=subprocess.DEVNULL)
 except Exception:
     pass
 EOF

@@ -1,109 +1,291 @@
 {
-  "games": [
-    {
-      "id": "browserquest",
-      "name": "BrowserQuest",
-      "runtime": {
-        "type": "docker",
-        "service": "browserquest-client",
-        "port": 80
-      },
-      "hosting": {
-        "hostname": "browserquest.localhost"
-      },
+  "repo": {
+    "name": {
+      "en-US": "Local Games Platform"
+    },
+    "description": {
+      "en-US": "Decentralized collection of hosted HTML5 games."
+    },
+    "address": "http://localhost",
+    "timestamp": 1786777401,
+    "releaseChannels": {
+      "stable": {
+        "name": {
+          "en-US": "Stable"
+        },
+        "description": {
+          "en-US": "Production-ready game versions."
+        }
+      }
+    },
+    "genres": [
+      "MMORPG",
+      "Puzzle",
+      "Text Adventure",
+      "Arcade",
+      "2D Platformer"
+    ]
+  },
+  "games": {
+    "browserquest": {
       "metadata": {
-        "genre": "MMORPG",
-        "developer": "Little Workshop / Mozilla",
+        "added": 1786800000,
+        "lastUpdated": 1786777401,
         "license": "MPL-2.0 / CC-BY-SA 3.0",
         "upstream": "https://github.com/mozilla/BrowserQuest",
+        "issueTracker": "",
+        "developer": {
+          "name": "Little Workshop / Mozilla"
+        },
+        "name": {
+          "en-US": "BrowserQuest"
+        },
+        "summary": {
+          "en-US": "A multiplayer adventure RPG experiment by Mozilla powered by HTML5 Canvas and WebSockets."
+        },
+        "description": {
+          "en-US": "A multiplayer adventure RPG experiment by Mozilla powered by HTML5 Canvas and WebSockets."
+        },
+        "categories": [
+          "MMORPG"
+        ],
         "multiplayer": true,
-        "icon": "\u2694\ufe0f",
-        "description": "A multiplayer adventure RPG experiment by Mozilla powered by HTML5 Canvas and WebSockets."
+        "graphics": {
+          "icon": {
+            "en-US": "\u2694\ufe0f"
+          },
+          "screenshots": {}
+        }
+      },
+      "releases": {
+        "stable-v1": {
+          "added": 1786800000,
+          "version": "1.0.0",
+          "releaseChannels": [
+            "stable"
+          ],
+          "whatsNew": {
+            "en-US": "Initial stable container release with full reverse proxy support."
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "browserquest-client",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "browserquest.localhost"
+          }
+        }
       }
     },
-    {
-      "id": "a-dark-room",
-      "name": "A Dark Room",
-      "runtime": {
-        "type": "docker",
-        "service": "game-adarkroom",
-        "port": 80
-      },
-      "hosting": {
-        "hostname": "adarkroom.localhost"
-      },
+    "a-dark-room": {
       "metadata": {
-        "genre": "Text Adventure / Incremental RPG",
-        "developer": "Michael Townsend (Doublespeak Games)",
+        "added": 1786800000,
+        "lastUpdated": 1786777401,
         "license": "GPL-3.0",
         "upstream": "https://github.com/doublespeakgames/adarkroom",
+        "issueTracker": "",
+        "developer": {
+          "name": "Michael Townsend (Doublespeak Games)"
+        },
+        "name": {
+          "en-US": "A Dark Room"
+        },
+        "summary": {
+          "en-US": "Minimalist text-based RPG and survival management."
+        },
+        "description": {
+          "en-US": "Minimalist text-based RPG and survival management. Awake in a cold room, light the fire, and explore."
+        },
+        "categories": [
+          "Text",
+          "Adventure",
+          "Incremental",
+          "RPG"
+        ],
         "multiplayer": false,
-        "icon": "\ud83d\udd25",
-        "description": "Minimalist text-based RPG and survival management. Awake in a cold room, light the fire, and explore."
+        "graphics": {
+          "icon": {
+            "en-US": "\ud83d\udd25"
+          },
+          "screenshots": {}
+        }
+      },
+      "releases": {
+        "stable-v1": {
+          "added": 1786800000,
+          "version": "1.0.0",
+          "releaseChannels": [
+            "stable"
+          ],
+          "whatsNew": {
+            "en-US": "Initial stable container release with full reverse proxy support."
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "game-adarkroom",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "adarkroom.localhost"
+          }
+        }
       }
     },
-    {
-      "id": "2048",
-      "name": 2048,
-      "runtime": {
-        "type": "docker",
-        "service": "game-2048",
-        "port": 80
-      },
-      "hosting": {
-        "hostname": "2048.localhost"
-      },
+    "2048": {
       "metadata": {
-        "genre": "Puzzle",
-        "developer": "Gabriele Cirulli",
+        "added": 1786800000,
+        "lastUpdated": 1786777401,
         "license": "MIT",
         "upstream": "https://github.com/gabrielecirulli/2048",
+        "issueTracker": "",
+        "developer": {
+          "name": "Gabriele Cirulli"
+        },
+        "name": {
+          "en-US": "2048"
+        },
+        "summary": {
+          "en-US": "The iconic sliding tile puzzle game."
+        },
+        "description": {
+          "en-US": "The iconic sliding tile puzzle game. Join matching numbers to reach the legendary 2048 tile."
+        },
+        "categories": [
+          "Puzzle"
+        ],
         "multiplayer": false,
-        "icon": "2048",
-        "description": "The iconic sliding tile puzzle game. Join matching numbers to reach the legendary 2048 tile."
+        "graphics": {
+          "icon": {
+            "en-US": "2048"
+          },
+          "screenshots": {}
+        }
+      },
+      "releases": {
+        "stable-v1": {
+          "added": 1786800000,
+          "version": "1.0.0",
+          "releaseChannels": [
+            "stable"
+          ],
+          "whatsNew": {
+            "en-US": "Initial stable container release with full reverse proxy support."
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "game-2048",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "2048.localhost"
+          }
+        }
       }
     },
-    {
-      "id": "hextris",
-      "name": "Hextris",
-      "runtime": {
-        "type": "docker",
-        "service": "game-hextris",
-        "port": 80
-      },
-      "hosting": {
-        "hostname": "hextris.localhost"
-      },
+    "hextris": {
       "metadata": {
-        "genre": "Arcade Puzzle",
-        "developer": "Logan Engstrom, Garrett Finucane, Noah Moroze, Michael Yang",
+        "added": 1786800000,
+        "lastUpdated": 1786777401,
         "license": "GPL-3.0-or-later",
         "upstream": "https://github.com/Hextris/hextris",
+        "issueTracker": "",
+        "developer": {
+          "name": "Logan Engstrom, Garrett Finucane, Noah Moroze, Michael Yang"
+        },
+        "name": {
+          "en-US": "Hextris"
+        },
+        "summary": {
+          "en-US": "Addictive hexagonal puzzle game inspired by Tetris."
+        },
+        "description": {
+          "en-US": "Addictive hexagonal puzzle game inspired by Tetris. Rotate the hexagon to match 3+ blocks of the same color."
+        },
+        "categories": [
+          "Arcade",
+          "Puzzle"
+        ],
         "multiplayer": false,
-        "icon": "\u2b21",
-        "description": "Addictive hexagonal puzzle game inspired by Tetris. Rotate the hexagon to match 3+ blocks of the same color."
+        "graphics": {
+          "icon": {
+            "en-US": "\u2b21"
+          },
+          "screenshots": {}
+        }
+      },
+      "releases": {
+        "stable-v1": {
+          "added": 1786800000,
+          "version": "1.0.0",
+          "releaseChannels": [
+            "stable"
+          ],
+          "whatsNew": {
+            "en-US": "Initial stable container release with full reverse proxy support."
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "game-hextris",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "hextris.localhost"
+          }
+        }
       }
     },
-    {
-      "id": "supertux",
-      "name": "SuperTux",
-      "runtime": {
-        "type": "docker",
-        "service": "game-supertux",
-        "port": 80
-      },
-      "hosting": {
-        "hostname": "supertux.localhost"
-      },
+    "supertux": {
       "metadata": {
-        "genre": "2D Platformer",
-        "developer": "SuperTux Development Team",
+        "added": 1786800000,
+        "lastUpdated": 1786777401,
         "license": "GPL-3.0-or-later",
         "upstream": "https://github.com/SuperTux/supertux/",
+        "issueTracker": "",
+        "developer": {
+          "name": "SuperTux Development Team"
+        },
+        "name": {
+          "en-US": "SuperTux"
+        },
+        "summary": {
+          "en-US": "A free and open-source 2D side-scrolling platform game heavily inspired by Nintendo's Super Mario Bros."
+        },
+        "description": {
+          "en-US": "A free and open-source 2D side-scrolling platform game heavily inspired by Nintendo's Super Mario Bros. series"
+        },
+        "categories": [
+          "2D",
+          "Platformer"
+        ],
         "multiplayer": false,
-        "icon": "\ud83d\udc27",
-        "description": "A free and open-source 2D side-scrolling platform game heavily inspired by Nintendo's Super Mario Bros. series"
+        "graphics": {
+          "icon": {
+            "en-US": "\ud83d\udc27"
+          },
+          "screenshots": {}
+        }
+      },
+      "releases": {
+        "stable-v1": {
+          "added": 1786800000,
+          "version": "1.0.0",
+          "releaseChannels": [
+            "stable"
+          ],
+          "whatsNew": {
+            "en-US": "Initial stable container release with full reverse proxy support."
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "game-supertux",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "supertux.localhost"
+          }
+        }
       }
     }
-  ]
+  }
 }

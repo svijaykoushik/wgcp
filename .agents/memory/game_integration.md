@@ -1,19 +1,23 @@
 ---
+okf_version: "0.2"
 type: Specification
-title: Game Integration Memory & Packaging Contract
-description: Standards and schemas for integrating HTML5 games into the WGCP console platform.
+title: Game Integration & Packaging Contract (Registry v2)
+description: Standards and schemas for integrating HTML5 games and packages into the WGCP console platform using Registry v2.
 status: stable
-generated: { by: antigravity/2.0, at: 2026-08-15T11:42:00Z }
-verified: { by: human:vijaykoushik, at: 2026-08-15T11:42:00Z }
+generated: { by: antigravity/2.0, at: 2026-08-15T12:35:00Z }
+verified: { by: human:vijaykoushik, at: 2026-08-15T12:35:00Z }
 sources:
   - id: base-architecture
     resource: /ARCHITECTURE.md
     title: Base ARCHITECTURE document
+  - id: registry-v2-proposal
+    resource: /.agents/memory/proposals/P-001-game-registry-spec-v2.md
+    title: Game Registry Specification (v2) Proposal
 ---
 
-# Game Integration Memory & Packaging Contract
+# Game Integration & Packaging Contract (Registry v2)
 
-This document outlines the developer contract for integrating and containerizing HTML5 games to run on the Web Game Console Platform (WGCP) based on the base platform architecture.[^base-architecture]
+This document defines the developer contract for integrating and containerizing HTML5 games to run on the Web Game Console Platform (WGCP). It incorporates the Registry v2 format based on the approved proposal.[^registry-v2-proposal]
 
 ---
 
@@ -21,45 +25,170 @@ This document outlines the developer contract for integrating and containerizing
 
 Every hosted game must place a declarative contract file named `game.yaml` in its root directory. This configuration dictates routing, lifecycle management, and portal catalog representation.
 
-### Schema Specification
+### Schema Specification (V2 format)
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | String | **Yes** | Unique alphanumeric lowercase ID (e.g. `hextris`, `adarkroom`). |
-| `name` | String | **Yes** | User-friendly display name shown in the portal catalog. |
-| `runtime.type` | String | **Yes** | Deployment backend. Typically `docker`. |
-| `runtime.service` | String | **Yes** | Name of the primary game service as defined in `docker-compose.yml`. |
-| `runtime.port` | Integer | No | Internal port of the web server (defaults to `80`). |
-| `hosting.hostname`| String | **Yes** | Dynamic virtual host route registered in Caddy (e.g., `hextris.localhost`). |
-| `metadata.genre` | String | No | Game genre category. |
-| `metadata.developer`| String | No | Author or organization name. |
-| `metadata.license` | String | No | SPDX license identifier (e.g. `GPL-3.0-or-later`, `MIT`). |
-| `metadata.upstream` | String | No | Source control link. |
-| `metadata.multiplayer`| Boolean| No | Set `true` if game supports online/local multiplayer. |
-| `metadata.icon` | String | No | Unicode icon glyph, emoji, or icon asset name. |
-| `metadata.description`| String | No | Brief marketing description for library details. |
+| `name` | Dictionary/String | **Yes** | Localized display name dictionary (fallback: string map to `en-US`). |
+| `summary` | Dictionary/String | No | Localized short one-line marketing text. |
+| `description` | Dictionary/String | No | Localized detailed game description. |
+| `license` | String | No | SPDX license identifier (e.g. `GPL-3.0-or-later`, `MIT`). |
+| `upstream` | String | No | Source control repository URL. |
+| `issueTracker` | String | No | Issue tracking system link. |
+| `developer` | Dict/String | No | Developer info. Can be a string name or a dictionary with `name` and `website`. |
+| `categories` | Array of Strings | No | Replaces legacy `genre`. List of classifications (e.g. `["Arcade", "Puzzle"]`). |
+| `multiplayer` | Boolean | No | Set `true` if the game supports online/local multiplayer. |
+| `graphics.icon` | Dictionary/String | No | Localized icon glyph, emoji, or icon asset name. |
+| `graphics.screenshots` | Dict/Array | No | Screenshots structure. E.g., `desktop: [{ name: "path" }]`. |
+| `release.version` | String | **Yes** | Version of the deployable bundle (e.g. `1.2.0`). |
+| `release.channel` | String | **Yes** | Release track (`stable`, `beta`, etc.). |
+| `release.whatsNew` | Dictionary/String | No | Localized release changes summary. |
+| `release.runtime` | Dictionary | **Yes** | Runtime orchestration details (specifies `type: docker`, `service`, `port`). |
+| `release.hosting` | Dictionary | **Yes** | Reverse proxy properties (`hostname`, and optional `websockets: true`). |
 
-### Example Contract (`games/2048/game.yaml`)
+---
+
+### Example V2 Contract (`games/hextris/game.yaml`)
+
 ```yaml
-id: 2048
-name: "2048"
+id: hextris
+license: GPL-3.0-or-later
+upstream: https://github.com/Hextris/hextris
+issueTracker: https://github.com/Hextris/hextris/issues
+developer:
+  name: "Logan Engstrom, Garrett Finucane, Noah Moroze, Michael Yang"
 
-runtime:
-  type: docker
-  service: game-2048
-  port: 80
+# Localized app listings (F-Droid v2 style inline dictionary)
+name:
+  en-US: Hextris
+  es-ES: Hextris
+summary:
+  en-US: Addictive hexagonal puzzle game.
+  es-ES: Adictivo juego de rompecabezas hexagonal.
+description:
+  en-US: Rotate the hexagon to match 3+ blocks of the same color.
+  es-ES: Gira el hexágono para combinar 3 o más bloques del mismo color.
 
-hosting:
-  hostname: 2048.localhost
+categories:
+  - Arcade
+  - Puzzle
 
-metadata:
-  genre: Puzzle
-  developer: Gabriele Cirulli
-  license: MIT
-  upstream: https://github.com/gabrielecirulli/2048
-  multiplayer: false
-  icon: "🔢"
-  description: Slide numbered tiles on a grid to combine them and create a tile with the number 2048.
+multiplayer: false
+
+graphics:
+  icon: "⬡"
+  screenshots:
+    desktop:
+      - name: assets/screenshot1.png
+
+# Details of the current active release build
+release:
+  version: 1.2.0
+  channel: stable
+  whatsNew:
+    en-US: Fixed canvas scaling on mobile browsers and updated colors.
+    es-ES: Se corrigió el escalado de canvas en móviles y se actualizaron colores.
+  runtime:
+    type: docker
+    service: game-hextris
+    port: 80
+  hosting:
+    hostname: hextris.localhost
+```
+
+---
+
+## 🗄️ Registry File Format (`games.json`)
+
+The platform aggregates all games into a single central index `/platform/registry/games.json`.
+
+### Structure
+
+1. **`repo`**: Repository information, Mirrored nodes, genres, and release channels configuration.
+2. **`games`**: A key-value dictionary of games keyed by their `id`. Each entry divides concerns between static metadata (`metadata`) and versioned execution blocks (`releases`).
+
+### Registry V2 JSON Example
+
+```json
+{
+  "repo": {
+    "name": {
+      "en-US": "Local Games Platform"
+    },
+    "description": {
+      "en-US": "Decentralized collection of hosted HTML5 games."
+    },
+    "address": "http://localhost",
+    "timestamp": 1786851200,
+    "releaseChannels": {
+      "stable": {
+        "name": { "en-US": "Stable" },
+        "description": { "en-US": "Production-ready game versions." }
+      }
+    },
+    "genres": [
+      "MMORPG",
+      "Puzzle",
+      "Text Adventure",
+      "Arcade",
+      "2D Platformer"
+    ]
+  },
+  "games": {
+    "hextris": {
+      "metadata": {
+        "added": 1786800000,
+        "lastUpdated": 1786850000,
+        "license": "GPL-3.0-or-later",
+        "upstream": "https://github.com/Hextris/hextris",
+        "issueTracker": "https://github.com/Hextris/hextris/issues",
+        "developer": {
+          "name": "Logan Engstrom, Garrett Finucane, Noah Moroze, Michael Yang"
+        },
+        "name": {
+          "en-US": "Hextris"
+        },
+        "summary": {
+          "en-US": "Addictive hexagonal puzzle game."
+        },
+        "description": {
+          "en-US": "Rotate the hexagon to match 3+ blocks of the same color."
+        },
+        "categories": ["Arcade", "Puzzle"],
+        "multiplayer": false,
+        "graphics": {
+          "icon": {
+            "en-US": "⬡"
+          },
+          "screenshots": {
+            "desktop": [
+              { "name": "assets/screenshot1.png" }
+            ]
+          }
+        }
+      },
+      "releases": {
+        "stable-v1.2.0": {
+          "added": 1786850000,
+          "version": "1.2.0",
+          "releaseChannels": ["stable"],
+          "whatsNew": {
+            "en-US": "Fixed canvas scaling on mobile browsers and updated colors."
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "game-hextris",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "hextris.localhost"
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 ---
@@ -80,9 +209,9 @@ To integrate an HTML5 game successfully, the game folder must contain:
    * Configure a health check to verify that the server is active. The registration script relies on Docker Inspect health checks.
    ```yaml
    services:
-     game-2048:
+     game-hextris:
        build: .
-       container_name: game-2048
+       container_name: game-hextris
        restart: unless-stopped
        healthcheck:
          test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
@@ -90,6 +219,7 @@ To integrate an HTML5 game successfully, the game folder must contain:
          timeout: 3s
          retries: 3
    ```
-3. **`game.yaml`**: The metadata block described above.
+3. **`game.yaml`**: The metadata and release contract described above.
 
-[^base-architecture]: Base ARCHITECTURE document
+[^base-architecture]: Base ARCHITECTURE document ([/ARCHITECTURE.md](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/ARCHITECTURE.md))
+[^registry-v2-proposal]: Game Registry Specification (v2) Proposal ([P-001](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/proposals/P-001-game-registry-spec-v2.md))

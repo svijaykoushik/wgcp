@@ -27,10 +27,32 @@ with open('$GAME_YAML') as f:
 print(json.dumps(data))
 ")
 
-GAME_ID=$(python3 -c "import json; print(json.loads('''$GAME_JSON''').get('id', ''))")
-GAME_SERVICE=$(python3 -c "import json; print(json.loads('''$GAME_JSON''').get('runtime', {}).get('service', ''))")
-GAME_PORT=$(python3 -c "import json; print(json.loads('''$GAME_JSON''').get('runtime', {}).get('port', 80))")
-GAME_HOSTNAME=$(python3 -c "import json; print(json.loads('''$GAME_JSON''').get('hosting', {}).get('hostname', ''))")
+GAME_ID=$(python3 -c "
+import json
+data = json.loads('''$GAME_JSON''')
+print(data.get('id', ''))
+")
+
+GAME_SERVICE=$(python3 -c "
+import json
+data = json.loads('''$GAME_JSON''')
+service = data.get('runtime', {}).get('service') or data.get('release', {}).get('runtime', {}).get('service', '')
+print(service)
+")
+
+GAME_PORT=$(python3 -c "
+import json
+data = json.loads('''$GAME_JSON''')
+port = data.get('runtime', {}).get('port') or data.get('release', {}).get('runtime', {}).get('port', 80)
+print(port)
+")
+
+GAME_HOSTNAME=$(python3 -c "
+import json
+data = json.loads('''$GAME_JSON''')
+hostname = data.get('hosting', {}).get('hostname') or data.get('release', {}).get('hosting', {}).get('hostname', '')
+print(hostname)
+")
 
 if [ -z "$GAME_ID" ] || [ -z "$GAME_SERVICE" ] || [ -z "$GAME_HOSTNAME" ]; then
     echo "Error: game.yaml must specify id, runtime.service, and hosting.hostname"
@@ -77,24 +99,162 @@ if [ $HEALTHY -eq 0 ]; then
 fi
 
 # 5. Update registry (idempotent: replace if existing, append if new)
-python3 - "$PLATFORM_DIR/registry/games.json" "$GAME_JSON" << 'EOF'
-import sys, json
+python3 - "$PLATFORM_DIR/registry/games.json" "$GAME_YAML" << 'EOF'
+import sys, json, time, yaml
 
 registry_file = sys.argv[1]
-game_data = json.loads(sys.argv[2])
-game_id = game_data.get("id")
+game_yaml_path = sys.argv[2]
 
 try:
     with open(registry_file, 'r') as f:
         registry = json.load(f)
 except Exception:
-    registry = {"games": []}
+    registry = {}
 
-games = registry.get("games", [])
-# Remove existing entry with same ID if present
-games = [g for g in games if str(g.get("id")) != str(game_id)]
-games.append(game_data)
-registry["games"] = games
+if "repo" not in registry:
+    registry["repo"] = {
+        "name": {"en-US": "Local Games Platform"},
+        "description": {"en-US": "Decentralized collection of hosted HTML5 games."},
+        "address": "http://localhost",
+        "timestamp": int(time.time()),
+        "genres": ["MMORPG", "Puzzle", "Text Adventure", "Arcade", "2D Platformer"]
+    }
+
+if "games" not in registry or isinstance(registry["games"], list):
+    registry["games"] = {}
+
+with open(game_yaml_path, 'r') as f:
+    data = yaml.safe_load(f)
+
+game_id = data.get('id')
+if not game_id:
+    print("Error: game.yaml is missing an ID.")
+    sys.exit(1)
+
+existing_game = registry["games"].get(game_id, {})
+
+now = int(time.time())
+added = now
+if existing_game and 'metadata' in existing_game:
+    added = existing_game['metadata'].get('added', now)
+
+def localize(val):
+    if not val:
+        return {}
+    if isinstance(val, dict):
+        return val
+    return {"en-US": str(val)}
+
+legacy_meta = data.get('metadata', {})
+
+license_val = data.get('license') or legacy_meta.get('license', 'Unknown')
+upstream = data.get('upstream') or legacy_meta.get('upstream', '')
+issue_tracker = data.get('issueTracker') or legacy_meta.get('issueTracker', '')
+
+dev_val = data.get('developer') or legacy_meta.get('developer', {})
+if isinstance(dev_val, str):
+    developer = {"name": dev_val}
+elif isinstance(dev_val, dict):
+    developer = dev_val
+else:
+    developer = {"name": "Unknown"}
+
+name = localize(data.get('name') or legacy_meta.get('name'))
+if not name:
+    name = {"en-US": game_id.capitalize()}
+
+summary = localize(data.get('summary') or legacy_meta.get('summary'))
+if not summary:
+    desc_en = localize(data.get('description') or legacy_meta.get('description', '')).get('en-US', '')
+    summary_en = desc_en.split('.')[0] + '.' if desc_val else f"Play {name.get('en-US')} on WGCP."
+    summary = {"en-US": summary_en}
+
+description = localize(data.get('description') or legacy_meta.get('description'))
+if not description:
+    description = {"en-US": f"Play {name.get('en-US')} on WGCP."}
+
+categories = data.get('categories')
+if not categories:
+    genre = legacy_meta.get('genre', '')
+    import re
+    categories = [c.strip() for c in re.split(r'[/,\s]+', genre) if c.strip()]
+if not categories:
+    categories = ["HTML5"]
+
+multiplayer = data.get('multiplayer')
+if multiplayer is None:
+    multiplayer = legacy_meta.get('multiplayer', False)
+
+icon_val = None
+if 'graphics' in data and 'icon' in data['graphics']:
+    icon_val = data['graphics']['icon']
+elif 'graphics' in legacy_meta and 'icon' in legacy_meta['graphics']:
+    icon_val = legacy_meta['graphics']['icon']
+else:
+    icon_val = data.get('icon') or legacy_meta.get('icon', '🎮')
+
+icon = localize(icon_val)
+
+screenshots = {}
+screenshots_val = None
+if 'graphics' in data and 'screenshots' in data['graphics']:
+    screenshots_val = data['graphics']['screenshots']
+elif 'graphics' in legacy_meta and 'screenshots' in legacy_meta['graphics']:
+    screenshots_val = legacy_meta['graphics']['screenshots']
+
+if isinstance(screenshots_val, dict):
+    screenshots = screenshots_val
+elif isinstance(screenshots_val, list):
+    screenshots = {"desktop": [{"name": s} for s in screenshots_val]}
+
+metadata = {
+    "added": added,
+    "lastUpdated": now,
+    "license": license_val,
+    "upstream": upstream,
+    "issueTracker": issue_tracker,
+    "developer": developer,
+    "name": name,
+    "summary": summary,
+    "description": description,
+    "categories": categories,
+    "multiplayer": multiplayer,
+    "graphics": {
+        "icon": icon,
+        "screenshots": screenshots
+    }
+}
+
+rel_data = data.get('release', {})
+version = rel_data.get('version') or data.get('version') or '1.0.0'
+channel = rel_data.get('channel') or 'stable'
+whats_new = localize(rel_data.get('whatsNew') or 'Initial release')
+
+runtime = rel_data.get('runtime') or data.get('runtime')
+hosting = rel_data.get('hosting') or data.get('hosting')
+
+if not runtime or not hosting:
+    print("Error: game.yaml must specify runtime and hosting details")
+    sys.exit(1)
+
+release_key = f"{channel}-v{version}"
+
+releases = existing_game.get('releases', {}) if existing_game else {}
+releases[release_key] = {
+    "added": now,
+    "version": version,
+    "releaseChannels": [channel],
+    "whatsNew": whats_new,
+    "runtime": runtime,
+    "hosting": hosting
+}
+
+registry["games"][game_id] = {
+    "metadata": metadata,
+    "releases": releases
+}
+
+registry["repo"]["timestamp"] = now
 
 with open(registry_file, 'w') as f:
     json.dump(registry, f, indent=2)
