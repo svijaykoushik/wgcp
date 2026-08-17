@@ -7,7 +7,7 @@
       "en-US": "Decentralized collection of hosted HTML5 games."
     },
     "address": "http://localhost",
-    "timestamp": 1786777401,
+    "timestamp": 1786941468,
     "releaseChannels": {
       "stable": {
         "name": {
@@ -238,7 +238,7 @@
     "supertux": {
       "metadata": {
         "added": 1786800000,
-        "lastUpdated": 1786777401,
+        "lastUpdated": 1786941468,
         "license": "GPL-3.0-or-later",
         "upstream": "https://github.com/SuperTux/supertux/",
         "issueTracker": "",
@@ -283,6 +283,30 @@
           },
           "hosting": {
             "hostname": "supertux.localhost"
+          }
+        },
+        "stable-v1.0.0": {
+          "added": 1786941468,
+          "version": "1.0.0",
+          "releaseChannels": [
+            "stable"
+          ],
+          "whatsNew": {
+            "en-US": "Initial release"
+          },
+          "runtime": {
+            "type": "docker",
+            "service": "game-supertux",
+            "port": 80
+          },
+          "hosting": {
+            "hostname": "supertux.localhost",
+            "capabilities": [
+              "autoplay",
+              "fullscreen",
+              "gamepad",
+              "persistent-storage"
+            ]
           }
         }
       }

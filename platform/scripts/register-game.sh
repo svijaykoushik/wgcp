@@ -166,7 +166,7 @@ if not name:
 summary = localize(data.get('summary') or legacy_meta.get('summary'))
 if not summary:
     desc_en = localize(data.get('description') or legacy_meta.get('description', '')).get('en-US', '')
-    summary_en = desc_en.split('.')[0] + '.' if desc_val else f"Play {name.get('en-US')} on WGCP."
+    summary_en = desc_en.split('.')[0] + '.' if desc_en else f"Play {name.get('en-US')} on WGCP."
     summary = {"en-US": summary_en}
 
 description = localize(data.get('description') or legacy_meta.get('description'))

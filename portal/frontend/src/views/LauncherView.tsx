@@ -161,6 +161,11 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
     return <LaunchSequence game={game} onComplete={handleLaunchComplete} />;
   }
 
+  const requestedCapabilities = game.hosting?.capabilities;
+  const iframeAllow = requestedCapabilities && requestedCapabilities.length > 0
+    ? requestedCapabilities.join('; ')
+    : 'autoplay; fullscreen; gamepad; focus-without-user-activation; accelerometer; gyroscope; clipboard-read; clipboard-write';
+
   return (
     <div className="fixed inset-0 z-[9999] w-screen h-screen bg-black overflow-hidden select-none">
       <div className="w-full h-full relative flex items-center justify-center bg-black">
@@ -168,7 +173,7 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
           ref={iframeRef}
           src={resolveGameUrl(game)}
           className="w-full h-full border-none bg-black block animate-fade-in"
-          allow="autoplay; fullscreen; gamepad; focus-without-user-activation; accelerometer; gyroscope; clipboard-read; clipboard-write"
+          allow={iframeAllow}
           onLoad={scheduleAsyncFocus}
         />
       </div>

@@ -146,7 +146,7 @@ describe('Frontend App flow tests', () => {
     });
   });
 
-  test('Launches game from library', async () => {
+  test('Launches game from library with fallback capabilities', async () => {
     // 1. Session check: authorized
     (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
@@ -188,5 +188,69 @@ describe('Frontend App flow tests', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /⚙ System Menu/i })).toBeInTheDocument();
     });
+
+    const iframe = document.querySelector('iframe');
+    expect(iframe).toBeInTheDocument();
+    expect(iframe?.getAttribute('allow')).toBe('autoplay; fullscreen; gamepad; focus-without-user-activation; accelerometer; gyroscope; clipboard-read; clipboard-write');
+  });
+
+  test('Launches game from library with custom capabilities', async () => {
+    // 1. Session check: authorized
+    (globalThis.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 1, username: 'testuser' }),
+    });
+
+    // 2. Registry call (V2 format)
+    (globalThis.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        games: {
+          hextris: {
+            metadata: {
+              name: { 'en-US': 'Hextris' },
+              description: { 'en-US': 'Hexagonal puzzle' },
+              graphics: { icon: { 'en-US': '⬡' } },
+              categories: ['Puzzle']
+            },
+            releases: {
+              'stable-v1': {
+                version: '1.0.0',
+                releaseChannels: ['stable'],
+                whatsNew: { 'en-US': 'Updated' },
+                runtime: { service: 'game-hextris', port: 80 },
+                hosting: { hostname: 'hextris.localhost', capabilities: ['gamepad', 'fullscreen'] }
+              }
+            }
+          }
+        }
+      }),
+    });
+
+    // 3. Library call (contains Hextris)
+    (globalThis.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => (['hextris']),
+    });
+
+    render(<App />);
+
+    // Wait for Hextris card in library
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Hextris' })).toBeInTheDocument();
+    });
+
+    // Click Play Game
+    const playBtn = screen.getByRole('button', { name: /Play Game/i });
+    fireEvent.click(playBtn);
+
+    // Verify system menu trigger button is rendered (meaning the launcher is active)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /⚙ System Menu/i })).toBeInTheDocument();
+    });
+
+    const iframe = document.querySelector('iframe');
+    expect(iframe).toBeInTheDocument();
+    expect(iframe?.getAttribute('allow')).toBe('gamepad; fullscreen');
   });
 });

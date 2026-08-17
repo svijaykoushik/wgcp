@@ -87,7 +87,8 @@ function parseRegistryV2(data: any): Game[] {
       name,
       url: gameVal.url,
       hosting: {
-        hostname: hosting.hostname
+        hostname: hosting.hostname,
+        capabilities: Array.isArray(hosting.capabilities) ? hosting.capabilities : undefined
       },
       runtime: {
         service: runtime.service,

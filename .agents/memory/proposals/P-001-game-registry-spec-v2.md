@@ -252,5 +252,35 @@ The Python step in the registration script must be refactored to parse the new s
 * The UI portal will fetch `/api/registry.json`.
 * It will parse the localized keys dynamically according to the user's browser language, defaulting back to `en-US`.
 
+---
+
+## 7. Addendum: Browser API Capabilities & Iframe Permissions
+
+To allow games to request necessary Browser APIs and features, games may declare their capability dependencies in their `game.yaml` configuration. The platform uses this data to dynamically compile and assign the appropriate `allow` attributes on the loading iframe.
+
+### 7.1. Spec Schema Changes
+* **`game.yaml`**: Adds an optional array `hosting.capabilities` containing the specific browser features required.
+* **`games.json`**: Compiles this array into `games.<id>.releases.<release_key>.hosting.capabilities`.
+
+### 7.2. Allowed Capabilities / Browser APIs
+Standard supported values include (but are not limited to):
+* `autoplay`
+* `fullscreen`
+* `gamepad`
+* `camera`
+* `microphone`
+* `geolocation`
+* `accelerometer`
+* `gyroscope`
+* `clipboard-read`
+* `clipboard-write`
+
+### 7.3. Dynamic Iframe Security & Sandbox Defaults
+When the platform launcher renders the game in an `iframe`:
+1. If the game declares a non-empty `hosting.capabilities` list, the iframe `allow` attribute will be configured with exactly those capabilities (joined by `;`).
+2. If `hosting.capabilities` is omitted or empty, the iframe falls back to the backward-compatible default baseline:
+   `autoplay; fullscreen; gamepad; focus-without-user-activation; accelerometer; gyroscope; clipboard-read; clipboard-write`
+
 [^legacy-registry]: Current games registry file (`platform/registry/games.json`)
 [^acceptance-decision]: Decision to adopt Game Registry Specification (v2) ([D-003](/decisions/D-003-accept-registry-spec-v2.md))
+

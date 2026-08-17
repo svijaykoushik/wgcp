@@ -9,6 +9,7 @@ export interface GameMetadata {
 
 export interface GameHosting {
   hostname?: string;
+  capabilities?: string[];
 }
 
 export interface GameRuntime {
