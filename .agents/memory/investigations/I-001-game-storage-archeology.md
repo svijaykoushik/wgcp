@@ -23,19 +23,19 @@ This investigation was conducted to analyze how each game on the Web Game Consol
 ## 1. 2048
 
 * **Progress & Player Data Storage**:
-  * Managed client-side by [`local_storage_manager.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/2048/js/local_storage_manager.js).
+  * Managed client-side by [`local_storage_manager.js`](/games/2048/js/local_storage_manager.js).
   * Persisted via the browser's `window.localStorage` object, falling back to an in-memory dictionary (`window.fakeStorage`) if local storage is not supported.
   * State is mapped under two distinct storage keys:
     * `"bestScore"`: Persists the highest numeric score achieved.
     * `"gameState"`: JSON string representing the active board grid tiles, current score, game-over status, and play-on flag.
 * **Assets**:
-  * Standard static assets served locally relative to the root page [`index.html`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/2048/index.html).
-  * Main stylesheet is [`style/main.css`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/2048/style/main.css).
+  * Standard static assets served locally relative to the root page [`index.html`](/games/2048/index.html).
+  * Main stylesheet is [`style/main.css`](/games/2048/style/main.css).
   * Application JS files are structured inside the `js/` folder.
 * **Config**:
   * Coded as static defaults inside JS helper modules.
   * Layout scaling configurations are declared inside the index CSS and standard HTML metadata viewport constraints.
-  * Inputs and key bindings (Arrow keys, WASD, Swipe gestures) are statically defined inside [`keyboard_input_manager.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/2048/js/keyboard_input_manager.js).
+  * Inputs and key bindings (Arrow keys, WASD, Swipe gestures) are statically defined inside [`keyboard_input_manager.js`](/games/2048/js/keyboard_input_manager.js).
 
 ---
 
@@ -43,12 +43,12 @@ This investigation was conducted to analyze how each game on the Web Game Consol
 
 * **Progress & Player Data Storage**:
   * Saved client-side in `window.localStorage` under the key `"data"`.
-  * Managed by [`storage.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/BrowserQuest/client/js/storage.js), storing a JSON structure containing:
+  * Managed by [`storage.js`](/games/BrowserQuest/client/js/storage.js), storing a JSON structure containing:
     * `hasAlreadyPlayed`: Boolean flag indicating return user status.
     * `player`: Object containing player `name`, current `weapon` sprite, current `armor` sprite, and client-side character `image`.
     * `achievements`: Object containing unlocked achievements array and stats tracking counts (rats killed, skeletons killed, total dmg taken, total revives).
   * **Server-Side Persistence**: The game server does not integrate with any database. All websocket players, coordinates, and health pools are tracked purely in-memory.
-  * **Synchronization**: On connection handshake, the client retrieves its local store, and transmits the username and equipment IDs to the server inside a WebSocket `HELLO` message defined in [`gameclient.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/BrowserQuest/client/js/gameclient.js):
+  * **Synchronization**: On connection handshake, the client retrieves its local store, and transmits the username and equipment IDs to the server inside a WebSocket `HELLO` message defined in [`gameclient.js`](/games/BrowserQuest/client/js/gameclient.js):
     ```javascript
     sendHello: function(player) {
         this.sendMessage([Types.Messages.HELLO,
@@ -63,8 +63,8 @@ This investigation was conducted to analyze how each game on the Web Game Consol
     * Audio soundtrack files reside in `client/audio/`.
     * Tilemap descriptors are stored in `client/maps/`.
 * **Config**:
-  * **Server Config**: Placed in [`config.json`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/BrowserQuest/server/config.json) or [`config_docker.json`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/BrowserQuest/server/config_docker.json), defining connection properties (`port`), instance rules (`nb_players_per_world`, `nb_worlds`), and game data targets (`map_filepath`).
-  * **Client Config**: Placed in [`config_build.json`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/BrowserQuest/client/config/config_build.json) to declare the target host/port for socket connection.
+  * **Server Config**: Placed in [`config.json`](/games/BrowserQuest/server/config.json) or [`config_docker.json`](/games/BrowserQuest/server/config_docker.json), defining connection properties (`port`), instance rules (`nb_players_per_world`, `nb_worlds`), and game data targets (`map_filepath`).
+  * **Client Config**: Placed in [`config_build.json`](/games/BrowserQuest/client/config/config_build.json) to declare the target host/port for socket connection.
 
 ---
 
@@ -72,7 +72,7 @@ This investigation was conducted to analyze how each game on the Web Game Consol
 
 * **Progress & Player Data Storage**:
   * Stored in the browser's `localStorage` under the key `"gameState"`.
-  * Handled via `StateManager` (`$SM`) in [`state_manager.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/adarkroom/script/state_manager.js) and written to storage by `Engine.saveGame()` in [`engine.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/adarkroom/script/engine.js).
+  * Handled via `StateManager` (`$SM`) in [`state_manager.js`](/games/adarkroom/script/state_manager.js) and written to storage by `Engine.saveGame()` in [`engine.js`](/games/adarkroom/script/engine.js).
   * Structure separates concerns between:
     * `features`: Unlocked modules, structures, and systems.
     * `stores`: Current items, counts, and materials.
@@ -80,7 +80,7 @@ This investigation was conducted to analyze how each game on the Web Game Consol
     * `income`: Active production ticks (woodcutters, traps, etc.).
     * `timers`, `game`, `playStats`, `previous`, `outfit`, `config`, and `cooldown`.
   * **Cloud Save Sync**:
-    * Managed inside [`dropbox.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/adarkroom/script/dropbox.js) using the Dropbox Datastore API (using key `'q7vyvfsakyfmp3o'` under the table `'adarkroom'`).
+    * Managed inside [`dropbox.js`](/games/adarkroom/script/dropbox.js) using the Dropbox Datastore API (using key `'q7vyvfsakyfmp3o'` under the table `'adarkroom'`).
     * Encodes game data in base64 to keep up to 5 individual save slots.
 * **Assets**:
   * Text-based game with styled CSS layouts inside `css/`.
@@ -97,7 +97,7 @@ This investigation was conducted to analyze how each game on the Web Game Consol
 
 * **Progress & Player Data Storage**:
   * High scores and active states are stored in browser `localStorage`.
-  * Saving is controlled within [`save-state.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/hextris/js/save-state.js).
+  * Saving is controlled within [`save-state.js`](/games/hextris/js/save-state.js).
   * Keys used:
     * `"highscores"`: Sorted array of high scores, serialized as a JSON string and capped to the top 3 scores.
     * `"saveState"`: JSON string representing the state of the active/paused game, serialized with `JSONfn.stringify`.
@@ -109,7 +109,7 @@ This investigation was conducted to analyze how each game on the Web Game Consol
     * Images and fonts in `images/`.
     * Third-party libraries (jQuery, JSONfn, Hammer.js, FontAwesome) are loaded locally from `vendor/`.
 * **Config**:
-  * Core settings (fall speeds, difficulty multipliers, scales, combo timing limits) are hardcoded as configuration constants inside [`initialization.js`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/hextris/js/initialization.js).
+  * Core settings (fall speeds, difficulty multipliers, scales, combo timing limits) are hardcoded as configuration constants inside [`initialization.js`](/games/hextris/js/initialization.js).
 
 ---
 
@@ -117,7 +117,7 @@ This investigation was conducted to analyze how each game on the Web Game Consol
 
 * **Progress, Config & Player Data Storage**:
   * Ported to WebAssembly, using the Emscripten IndexedDB File System (`IDBFS`) to achieve persistence.
-  * The virtual home directory is defined in [`main.cpp`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/supertux/src/supertux/main.cpp):
+  * The virtual home directory is defined in [`main.cpp`](/games/supertux/src/supertux/main.cpp):
     ```cpp
     m_userdir = "/home/web_user/.local/share/supertux2/";
     ```
@@ -127,7 +127,7 @@ This investigation was conducted to analyze how each game on the Web Game Consol
     FS.syncfs(true, (err) => { console.log(err); });
     ```
   * PhysFS compiles configuration files, world progress, and savegames to this virtual directory.
-  * **Synchronization**: At the end of every loop iteration (`loop_iter` in [`screen_manager.cpp`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/supertux/src/supertux/screen_manager.cpp)), the JS routine `supertux2_syncfs()` executes `FS.syncfs(false, ...)` (defined in [`template.html.in`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/games/supertux/mk/emscripten/template.html.in)) to sync all updates back to the browser's IndexedDB.
+  * **Synchronization**: At the end of every loop iteration (`loop_iter` in [`screen_manager.cpp`](/games/supertux/src/supertux/screen_manager.cpp)), the JS routine `supertux2_syncfs()` executes `FS.syncfs(false, ...)` (defined in [`template.html.in`](/games/supertux/mk/emscripten/template.html.in)) to sync all updates back to the browser's IndexedDB.
 * **Assets**:
   * Compiled game assets (levels, sound, graphics, scripts, fonts) are placed in the `data/` directory.
   * During the WASM build process (`Dockerfile.wasm`), the asset pack is copied to the build target and read by the executable using the static virtual filesystem.

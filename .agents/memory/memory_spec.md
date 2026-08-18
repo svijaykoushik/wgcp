@@ -137,9 +137,24 @@ All `generated.by` and `verified.by` metadata fields must adhere to the OKF Acto
 
 ---
 
-## 10. Provenance Rules
+## 10. Provenance Specifications
 
 * All files in the bundle must reference their external/internal sources under the `sources` YAML frontmatter key.
-* When referencing other repository files, use bundle-relative absolute paths (e.g. `/README.md` or `/platform.sh`) where the workspace root is mapped relative to the repository.
+* **Repository-Relative Paths**: When referencing source files outside of the memory bundle but within the repository (e.g. `/README.md`, `/platform.sh`, or `/platform/registry/games.json`), use absolute paths starting with `/`. The workspace/repository root is mapped to `/`.
+* **Bundle-Relative Paths**: When referencing another concept file inside the memory bundle as a source (e.g. `/decisions/D-003-accept-registry-spec-v2.md`), use an absolute path starting with `/`. The bundle root `.agents/memory/` is mapped to `/`.
+* **External Resources**: External materials must use absolute URLs (e.g., `https://...`).
+* **Footnote Citations (Per-Claim Attribution)**:
+  * To attribute specific claims or passages to a source, use standard Markdown footnote syntax (e.g., `[^source-id]`).
+  * The footnote label **must** correspond exactly to the `id` field of an entry declared in the frontmatter `sources` block (e.g., `[^okf-spec]`).
+  * **No Positional Mapping**: Positional indexes (like `[^1]` or `[^sources[0]]`) MUST NOT be used because documents are constantly rewritten and reordered by agents, which breaks positional mapping. Use stable, descriptive IDs.
+  * The footnote definition at the bottom of the document must follow standard Markdown syntax: `[^source-id]: Display title or description of the source`.
+
+---
+
+## 11. Cross-Linking Guidelines
+
+* **Bundle-Internal Links**: When linking between documents inside the `.agents/memory/` bundle (e.g., in the body text or in index files), use **Bundle-Relative Paths** starting with `/` (e.g. `[System Architecture](/architecture.md)`). The bundle root `.agents/memory/` is mapped to `/`. This ensures links remain stable if files are moved between subdirectories, and keeps the catalog portable.
+* **Codebase & Repository Links**: When linking to source code, scripts, or assets outside of the memory bundle (e.g., inside the `games/` or `platform/` folders), use **Repository-Relative Paths** starting with `/` (e.g., `[`storage.js`](/games/BrowserQuest/client/js/storage.js)`). The workspace/repository root is mapped to `/`.
+* **Portability Constraint**: Hardcoded environment-specific absolute filesystem paths or local protocols (such as `file:///home/...` or `file:///C:/...`) MUST NOT be used anywhere in the catalog.
 
 [^okf-spec]: Open Knowledge Format Specification (v0.2)

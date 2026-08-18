@@ -8,24 +8,24 @@ generated: { by: antigravity/2.0, at: 2026-08-18T22:55:00Z }
 verified: { by: human:vijaykoushik, at: 2026-08-18T22:55:00Z }
 sources:
   - id: game-sdk-storage-sync-spec
-    resource: /.agents/memory/proposals/P-002-game-sdk-storage-sync.md
+    resource: /proposals/P-002-game-sdk-storage-sync.md
     title: Game SDK & Portal Synchronization Specification (v2)
   - id: game-integration-spec
-    resource: /.agents/memory/game_integration.md
+    resource: /game_integration.md
     title: Game Integration & Packaging Contract
   - id: web-sdk-analysis
-    resource: /.agents/memory/investigations/I-002-web-game-sdk-archeology.md
+    resource: /investigations/I-002-web-game-sdk-archeology.md
     title: Web Game SDK Service Analysis
   - id: platform-stats-analysis
-    resource: /.agents/memory/investigations/I-003-platform-stats-progression-model.md
+    resource: /investigations/I-003-platform-stats-progression-model.md
     title: Platform Stats & Progression Models
 ---
 
 # Game Services API Specification (P-003)
 
-This proposal defines the design, messaging contracts, and runtime interfaces for the **Web Game Console Platform (WGCP) Game Services API**. It extends the transport and security models introduced in [`P-002-game-sdk-storage-sync.md`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/proposals/P-002-game-sdk-storage-sync.md) to support platform features: Identity, Achievements, Leaderboards, Telemetry/Lifecycle tracking, System Settings, Player Stats, Personal Bests, and Progressions.
+This proposal defines the design, messaging contracts, and runtime interfaces for the **Web Game Console Platform (WGCP) Game Services API**. It extends the transport and security models introduced in [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to support platform features: Identity, Achievements, Leaderboards, Telemetry/Lifecycle tracking, System Settings, Player Stats, Personal Bests, and Progressions.
 
-It incorporates architectural lessons from leading web console platforms analyzed in [`I-002-web-game-sdk-archeology.md`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/investigations/I-002-web-game-sdk-archeology.md) and native platform statistic architectures detailed in [`I-003-platform-stats-progression-model.md`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/investigations/I-003-platform-stats-progression-model.md).
+It incorporates architectural lessons from leading web console platforms analyzed in [`I-002-web-game-sdk-archeology.md`](/investigations/I-002-web-game-sdk-archeology.md) and native platform statistic architectures detailed in [`I-003-platform-stats-progression-model.md`](/investigations/I-003-platform-stats-progression-model.md).
 
 ---
 
@@ -68,7 +68,7 @@ To ensure a focus on stability, the following features are excluded from this sp
 
 ## 3. Core API Modules & Payload Specifications
 
-Building on the `RPCMessage` envelope defined in [`P-002-game-sdk-storage-sync.md`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/proposals/P-002-game-sdk-storage-sync.md), the following sections outline the specific APIs exposed to games.
+Building on the `RPCMessage` envelope defined in [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md), the following sections outline the specific APIs exposed to games.
 
 ### 3.1. Identity Module (`WGCP.identity`)
 Provides games with read-only context on the active player. It does not provide any session tokens or passwords.

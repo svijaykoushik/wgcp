@@ -19,7 +19,7 @@ sources:
 
 # Investigation Report (I-003) - Platform Stats & Progression Models
 
-This investigation analyzes how desktop platform services (Steamworks and Epic Online Services) and LiveOps backends (PlayFab) implement player statistics, progressions, and personal best tracking. These findings are used to design the stats and progression extensions proposed in [`P-003-game-sdk-services-api.md`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/proposals/P-003-game-sdk-services-api.md).
+This investigation analyzes how desktop platform services (Steamworks and Epic Online Services) and LiveOps backends (PlayFab) implement player statistics, progressions, and personal best tracking. These findings are used to design the stats and progression extensions proposed in [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md).
 
 ---
 

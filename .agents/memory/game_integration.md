@@ -11,7 +11,7 @@ sources:
     resource: /ARCHITECTURE.md
     title: Base ARCHITECTURE document
   - id: registry-v2-proposal
-    resource: /.agents/memory/proposals/P-001-game-registry-spec-v2.md
+    resource: /proposals/P-001-game-registry-spec-v2.md
     title: Game Registry Specification (v2) Proposal
 ---
 
@@ -221,5 +221,5 @@ To integrate an HTML5 game successfully, the game folder must contain:
    ```
 3. **`game.yaml`**: The metadata and release contract described above.
 
-[^base-architecture]: Base ARCHITECTURE document ([/ARCHITECTURE.md](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/ARCHITECTURE.md))
-[^registry-v2-proposal]: Game Registry Specification (v2) Proposal ([P-001](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/proposals/P-001-game-registry-spec-v2.md))
+[^base-architecture]: Base ARCHITECTURE document ([/ARCHITECTURE.md](/ARCHITECTURE.md))
+[^registry-v2-proposal]: Game Registry Specification (v2) Proposal ([P-001](/proposals/P-001-game-registry-spec-v2.md))

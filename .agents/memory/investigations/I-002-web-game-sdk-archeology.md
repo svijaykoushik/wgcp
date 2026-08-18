@@ -19,7 +19,7 @@ sources:
 
 # Investigation Report (I-002) - Web Game SDK Service Analysis
 
-This investigation analyzes the technical implementations and architectural approaches of leading web game portals (CrazyGames and Poki) to determine best practices for integrating hosted games into the Web Game Console Platform (WGCP). These findings directly inform the service proposals in [`P-003-game-sdk-services-api.md`](file:///home/vijaykoushik/Evee/My%20Documents/GitHub/Games/.agents/memory/proposals/P-003-game-sdk-services-api.md).
+This investigation analyzes the technical implementations and architectural approaches of leading web game portals (CrazyGames and Poki) to determine best practices for integrating hosted games into the Web Game Console Platform (WGCP). These findings directly inform the service proposals in [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md).
 
 ---
 
