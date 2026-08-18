@@ -1,5 +1,15 @@
 # Directory Update Log
 
+## 2026-08-18
+* **Update**: Expanded design proposal [`P-003-game-sdk-services-api.md`](file://./proposals/P-003-game-sdk-services-api.md) to incorporate player statistics, personal best models, and leveling progressions.
+* **Creation**: Added design proposal [`P-003-game-sdk-services-api.md`](file://./proposals/P-003-game-sdk-services-api.md) defining the Game Services API Specification.
+* **Creation**: Added investigation reports [`I-002-web-game-sdk-archeology.md`](file://./investigations/I-002-web-game-sdk-archeology.md) and [`I-003-platform-stats-progression-model.md`](file://./investigations/I-003-platform-stats-progression-model.md) analyzing web game SDK features and native platform statistics paradigms.
+
+## 2026-08-17
+* **Update**: Revised design proposal [`P-002-game-sdk-storage-sync.md`](file://./proposals/P-002-game-sdk-storage-sync.md) to integrate review feedback on security boundaries, replication models, and storage constraints.
+* **Creation**: Added design proposal [`P-002-game-sdk-storage-sync.md`](file://./proposals/P-002-game-sdk-storage-sync.md) outlining the Game SDK architecture and synchronization capabilities.
+* **Creation**: Added investigation report [`I-001-game-storage-archeology.md`](file://./investigations/I-001-game-storage-archeology.md) to log state persistence methodologies of registered console games.
+
 ## 2026-08-15
 * **Standardization**: Restructured memory catalog for progressive disclosure by establishing scoped `index.md` and `log.md` files within the `proposals/`, `decisions/`, `findings/`, and `investigations/` subdirectories.
 * **Standardization**: Updated `memory_spec.md` to define schema rules and metadata formats for `Decision`, `Finding`, and `Investigation` concept types.

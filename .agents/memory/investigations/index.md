@@ -2,4 +2,8 @@
 
 This directory holds diagnostics, debugging trails, and active issue investigations.
 
-*(No investigations currently registered)*
+## Investigations
+
+* [Games Storage & State Persistence Archeology](I-001-game-storage-archeology.md) - Archeological analysis identifying how each registered game stores player data, assets, config, and progress.
+* [Web Game SDK Service Analysis](I-002-web-game-sdk-archeology.md) - Technical analysis of CrazyGames and Poki SDKs, focusing on gameplay lifecycle events, data storage integration, advertisement triggers, and user authentication patterns.
+* [Platform Stats & Progression Models](I-003-platform-stats-progression-model.md) - Technical analysis of Steamworks, Epic Online Services (EOS), and PlayFab statistics, achievements, personal bests, and player progression integration systems.
