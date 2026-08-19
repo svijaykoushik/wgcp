@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-08-20
+* **Creation**: Added [`I-005-sdk-completeness-and-boundary-scrutiny.md`](/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md) detailing the SDK completeness audit, offline sync data-loss proof, localStorage proxy trade-offs, and communication boundary verification.
+
 ## 2026-08-18
 * **Creation**: Added [`I-004-memory-spec-pathing-portability.md`](/investigations/I-004-memory-spec-pathing-portability.md) detailing the analysis and fixes for memory spec path resolution and footnote rules.
 * **Creation**: Added [`I-002-web-game-sdk-archeology.md`](/investigations/I-002-web-game-sdk-archeology.md) detailing CrazyGames and Poki SDK features analysis.
