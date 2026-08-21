@@ -1,6 +1,7 @@
 # Investigations Update Log
 
 ## 2026-08-21
+* **Creation**: Added [`I-008-proposals-iterative-scrutiny.md`](/investigations/I-008-proposals-iterative-scrutiny.md) detailing a three-round iterative audit of the revised P-002 and P-003 specifications.
 * **Creation**: Added [`I-007-proposal-security-and-queue-audit.md`](/investigations/I-007-proposal-security-and-queue-audit.md) detailing an advanced audit focusing on postMessage origin hijacking, pending promise stacking, queue sharing, and session migration race conditions.
 * **Creation**: Added [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md) detailing a paper audit of the leaderboard score-verification flow and game-identity derivation mechanism in P-002 and P-003.
 

@@ -1,6 +1,7 @@
 # Directory Update Log
 
 ## 2026-08-21
+* **Creation**: Added investigation report [`I-008-proposals-iterative-scrutiny.md`](/investigations/I-008-proposals-iterative-scrutiny.md) containing a three-round iterative audit examining the Emscripten FS bridge, binary data transfer, telemetry limit, and queue boundaries.
 * **Creation**: Added investigation report [`I-007-proposal-security-and-queue-audit.md`](/investigations/I-007-proposal-security-and-queue-audit.md) auditing P-002 and P-003 on postMessage origin hijacking, pending promise stacking, queue sharing, and session migration race conditions.
 * **Update**: Revised design proposals [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) and [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to close the identity-derivation and leaderboard-token gaps found in [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md).
 * **Creation**: Added investigation report [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md) auditing the leaderboard score-verification flow and game-identity derivation mechanism proposed in P-002 and P-003.

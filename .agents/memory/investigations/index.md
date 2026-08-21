@@ -11,5 +11,7 @@ This directory holds diagnostics, debugging trails, and active issue investigati
 * [WGCP SDK Completeness and Boundary Scrutiny](I-005-sdk-completeness-and-boundary-scrutiny.md) - Architectural completeness audit, monotonic revision offline data-loss proof, localStorage proxy trade-offs, and communication boundary verification.
 * [Leaderboard & Identity Boundary Audit](I-006-leaderboard-identity-boundary-audit.md) - Paper audit of the leaderboard score-verification flow and game-identity derivation mechanism proposed in P-002 and P-003, conducted prior to any implementation.
 * [Proposal Security, Race-Condition, and Queue Audit](I-007-proposal-security-and-queue-audit.md) - Advanced audit focusing on postMessage origin hijacking, pending promise stacking during conflict overlays, queue sharing, and session migration race conditions.
+* [Proposals Iterative Scrutiny](I-008-proposals-iterative-scrutiny.md) - Three-round iterative audit examining the Emscripten FS bridge, binary data memory neutralization, client-side telemetry limits, and local vs. remote sync queueing.
+
 
 
