@@ -5,7 +5,7 @@ title: Game Services API Specification
 description: Proposal for the core game services SDK APIs (Identity, Achievements, Leaderboards, Settings, Telemetry, Stats, and Progression) running on the WGCP console platform.
 status: proposed
 generated: { by: antigravity/2.0, at: 2026-08-18T22:55:00Z }
-verified: { by: human:vijaykoushik, at: 2026-08-18T22:55:00Z }
+verified: { by: human:vijaykoushik, at: 2026-08-21T18:15:00Z }
 sources:
   - id: game-sdk-storage-sync-spec
     resource: /proposals/P-002-game-sdk-storage-sync.md
@@ -25,13 +25,17 @@ sources:
   - id: i006-leaderboard-identity-audit
     resource: /investigations/I-006-leaderboard-identity-boundary-audit.md
     title: Leaderboard & Identity Boundary Audit
+  - id: i007-proposal-security-audit
+    resource: /investigations/I-007-proposal-security-race-queue-audit.md
+    title: Proposal Security, Race-Condition, and Queue Audit
+  - id: i008-proposals-iterative-scrutiny
+    resource: /investigations/I-008-proposals-iterative-scrutiny.md
+    title: Proposals Iterative Scrutiny and Hardening Report
 ---
 
 # Game Services API Specification (P-003)
 
-This proposal defines the design, messaging contracts, and runtime interfaces for the **Web Game Console Platform (WGCP) Game Services API**. It extends the transport and security models introduced in [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to support platform features: Identity, Achievements, Leaderboards, Telemetry/Lifecycle tracking, System Settings, Player Stats, Personal Bests, and Progressions.
-
-It incorporates architectural lessons from leading web console platforms analyzed in [`I-002-web-game-sdk-archeology.md`](/investigations/I-002-web-game-sdk-archeology.md) and native platform statistic architectures detailed in [`I-003-platform-stats-progression-model.md`](/investigations/I-003-platform-stats-progression-model.md).
+This proposal defines the design, messaging contracts, runtime interfaces, and concurrency handling for the **Web Game Console Platform (WGCP) Game Services API**. It builds directly on the hardened transport, security model, origin verification protocols, and storage tiering introduced in [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to support high-level platform capabilities: Identity, Achievements, Leaderboards, Telemetry/Lifecycle tracking, System Settings, Player Stats, Personal Bests, and Progressions.
 
 ---
 
@@ -41,7 +45,7 @@ The WGCP Game Services API provides a set of features that help games integrate 
 
 ### Core Goals:
 1. **Decoupled Architecture**: Games remain self-contained. The SDK provides a unified frontend that falls back to in-memory mocks when the game is played standalone.
-2. **Unified UX overlay**: Achievements and system settings are displayed to players through a consistent portal user interface, rather than each game styling these elements separately.
+2. **Unified UX Overlay**: Achievements and system settings are displayed to players through a consistent portal user interface, rather than each game styling these elements separately.
 3. **Decoupled Analytics & Stats**: Separating player statistics and progression metrics from heavy game-save files allows the portal to aggregate player summaries across different titles without parsing game-specific binary saves.
 4. **Optimized Latency**: Non-blocking asynchronous RPC calls ensure game loop rendering is never blocked by network requests to the console backend.
 
@@ -56,15 +60,15 @@ To enforce security and reliability, services are divided into clear operational
 | Service Name | SDK (Client/Iframe) | Portal Wrapper (Parent) | Console Backend / Database | Trust Tier |
 | :--- | :--- | :--- | :--- | :--- |
 | **Identity** | Read-only access to basic profile fields (ID, name, avatar). | Brokers session state, prevents credential exposure. | Stores accounts, manages tokens, generates secure IDs. | **High Trust** (Portal-Only Auth) |
-| **Achievements** | Invokes unlock/increment actions (with transaction ID). | Renders visual unlock notification banners. | Validates idempotency, updates player achievement tables. | **Self-Trusted Event** (Score limits validated backend) |
-| **Leaderboards** | Submits score payload, queries active leaderboard lists. | Injects tamper-resistant portal signature headers. | Performs check validation (velocity, anomaly, signature checks). | **Untrusted Claim** (Rigorous backend audit) |
+| **Achievements** | Invokes unlock/increment actions (with UUIDv4 `txId`). | Renders visual unlock notification banners. | Validates idempotency (`txId`), updates player achievement tables. | **Self-Trusted Event** (Score limits validated backend) |
+| **Leaderboards** | Submits score payload, queries active leaderboard lists. | Injects tamper-resistant portal signature headers & telemetry snapshots. | Performs validation (velocity, anomaly, signature checks). | **Untrusted Claim** (Rigorous backend audit) |
 | **System Settings** | Subscribes to events, reads locale/theme/audio constraints. | Detects browser language/system mute, notifies iframe. | Saves user preferences across multiple portal boots. | **Medium Trust** (Sync client preferences) |
 | **Telemetry** | Emits performance events only; load/play lifecycle is derived by the portal wrapper, not the SDK.[^i005-boundary-audit] | Derives loading/gameplay lifecycle from iframe DOM & focus events, appends session details, logs client browser performance. | Accumulates usage metrics and builds console dashboard. | **Self-Trusted Metrics** |
-| **Player Stats** | Sets/increments numerical stat counters (with delta parameters). | Binds updates, manages offline queue. | Aggregates stat values, updates progress parameters. | **Self-Trusted Event** (Validated against bounds) |
+| **Player Stats** | Sets/increments numerical stat counters with double-buffering. | Deduplicates flushes via `batchId`, manages offline queue. | Aggregates stat values, updates progress parameters. | **Self-Trusted Event** (Validated against bounds) |
 | **Progressions** | Queries level details, adds experience points. | Coordinates leveling unlocks or animation events. | Computes XP thresholds, evaluates leveling curves. | **Untrusted Claim** (Validated server-side) |
 
 ### 2.2. Game Identity in Service Calls
-All service modules below (Achievements, Leaderboards, Player Stats, Progression) resolve the acting game context the same way P-002 resolves it for storage: the portal derives `gameId` by matching the `postMessage` event's `event.source` against the content window reference of the spawned iframe element. No module payload includes a client-declared `gameId` field, and the portal backend **must not** trust one if present — this prevents a compromised game iframe from writing achievements, scores, or stats against another game's identity.[^i005-boundary-audit]
+All service modules below (Achievements, Leaderboards, Player Stats, Progression) resolve the acting game context the same way P-002 resolves it for storage: the portal derives `gameId` by conjunctively matching the `postMessage` event's `event.source` against the active iframe's `contentWindow` and verifying `event.origin === canonicalGameOrigin`. All outgoing messages emitted by the Portal or SDK must specify the explicit canonical target origin; wildcard `targetOrigin: '*'` is strictly prohibited. No module payload includes a client-declared `gameId` field, and the portal backend **must not** trust one if present — this prevents a compromised game iframe from writing achievements, scores, or stats against another game's identity.[^i005-boundary-audit]
 
 ### 2.3. Deferred Capabilities
 To ensure a focus on stability, the following features are excluded from this specification and deferred to future proposals:
@@ -111,12 +115,12 @@ sequenceDiagram
     participant Backend as Console Backend
 
     Game->>SDK: WGCP.achievements.unlock('killed_boss_1')
-    SDK->>Portal: postMessage(WGCP_ACHIEVEMENT_UNLOCK, id: 'killed_boss_1', txId: 'uuid-123')
+    SDK->>Portal: postMessage(WGCP_ACHIEVEMENT_UNLOCK, id: 'killed_boss_1', txId: 'uuid-123', targetOrigin: portalOrigin)
     Portal->>Backend: API Request: Sync Achievement Unlock
     Backend->>Backend: Check Idempotency (txId)
     Backend-->>Portal: Confirm Unlock (First Time: True)
     Portal-->>Game: Renders visually appealing overlay banner "Achievement Unlocked!"
-    Portal-->>SDK: postMessage(WGCP_ACHIEVEMENT_ACK, success: true)
+    Portal-->>SDK: postMessage(WGCP_ACHIEVEMENT_ACK, success: true, targetOrigin: gameOrigin)
     SDK-->>Game: Promise Resolved (Unlocked)
 ```
 
@@ -178,8 +182,8 @@ To prevent players from submitting artificial high scores, score submission uses
 
 ---
 
-### 3.4. System Settings & Locale Module (`WGCP.system`)
-Enables the game to adapt to system preferences configured on the console portal dashboard and respond to UI lifecycle events (pause/resume).
+### 3.4. System Settings, Lifecycle & Overlay Security (`WGCP.system` & `WGCP.time`)
+Enables the game to adapt to system preferences configured on the console portal dashboard and respond securely to UI lifecycle events (pause/resume).
 
 #### Methods:
 ```typescript
@@ -190,39 +194,34 @@ interface SystemSettings {
   theme: 'console-dark' | 'console-light' | 'console-retro';
 }
 
+interface ResumeContext {
+  pausedDurationMs: number;
+  resumeTimestamp: number;
+}
+
 // Gets current settings.
 function getSettings(): SystemSettings;
 
 // Registers listener to update UI when settings shift.
 function onSettingsChanged(callback: (settings: SystemSettings) => void): void;
 
-// Registers listener to pause game rendering/loops when the portal overlays open.
+// Registers listener to pause game rendering/loops when portal overlays open.
 function onPause(callback: () => void): void;
 
-// Registers listener to resume game rendering/loops when the portal overlays close.
-function onResume(callback: () => void): void;
+// Registers listener to resume game rendering/loops when portal overlays close.
+function onResume(callback: (context: ResumeContext) => void): void;
 ```
 
 #### Overlay Input & Execution Handling:
 When displaying the system menu, conflict resolution modal, or other overlays:
-1. The Portal wrapper emits a `WGCP_PAUSE` postMessage to the iframe, triggering the game's `onPause` callback.
-2. The Portal must assign the `inert` attribute or set the iframe's `tabIndex = -1` to prevent keyboard or gamepad focus leaks.
-3. Upon closing the overlay, the Portal removes the input block and posts `WGCP_RESUME`, triggering the game's `onResume` callback.[^i007-proposal-security-audit]
-
-#### Lifecycle Synchronization (Locale Example):
-```mermaid
-sequenceDiagram
-    participant User as Console Player
-    participant Portal as Console Portal (Parent)
-    participant SDK as WGCP SDK
-    participant Game as Game (Iframe)
-
-    User->>Portal: Switches language to Spanish (es-ES)
-    Portal->>SDK: postMessage(WGCP_SETTINGS_CHANGED, { locale: 'es-ES', muted: false, ... })
-    SDK->>Game: Triggers onSettingsChanged callback
-    Game->>Game: Reloads localization files (lang/es-ES.js)
-    Game->>Game: Rerenders canvas with translated text
-```
+1. **Lifecycle Emission**: The Portal wrapper emits a `WGCP_PAUSE` postMessage to the iframe, triggering the game's `onPause` callback.
+2. **DOM Inertness**: The Portal assigns the `inert` attribute and sets the iframe's `tabIndex = -1` to prevent keyboard or DOM focus leaks.
+3. **SDK Gamepad Sandbox Proxy**: Because W3C Gamepad API polling (`navigator.getGamepads()`) operates outside the DOM tree and bypasses HTML `inert`, the SDK automatically proxies `navigator.getGamepads()`. While `WGCP_PAUSE` is active, the proxy returns neutral/zeroed gamepad objects (all buttons `pressed: false`, `value: 0.0`, all axes `0.0`). This completely eliminates controller input bleed while the player navigates the portal's overlay menus.[^i007-proposal-security-audit]
+4. **Web Audio & Media Suspension**: On `WGCP_PAUSE`, the SDK automatically invokes `.suspend()` on active `AudioContext` instances and pauses HTML5 `<audio>` and `<video>` elements. On `WGCP_RESUME`, it automatically calls `.resume()`.
+5. **Pointer Lock Release**: The Portal wrapper and SDK invoke `document.exitPointerLock()` immediately before displaying any modal overlay to free trapped mouse cursors.
+6. **Synthetic Key Release**: On `WGCP_PAUSE`, the SDK emits synthetic `keyup` events for all currently tracked keys to prevent sticky/ghost keys upon resumption.
+7. **Delta Time & Clock Calibration (`WGCP.time.getDelta`)**: `onResume` provides `{ pausedDurationMs, resumeTimestamp }`. The SDK exposes `WGCP.time.getDelta(currentTime?: number)` which automatically subtracts paused intervals and clamps maximum single-frame delta time to `0.1s` (100ms), preventing physics explosions ("spiral of death").
+8. Upon closing the overlay, the Portal removes the input block and posts `WGCP_RESUME`, triggering the game's `onResume` callback.[^i007-proposal-security-audit]
 
 ---
 
@@ -240,13 +239,55 @@ function reportPerformance(fps: number, memoryUsage?: number): void;
 ### 3.6. Player Stats Module (`WGCP.stats`)
 Provides a structured model for storing, retrieving, and incrementing numerical counters. Following the pattern established by EOS and Steamworks, updating a statistic uses **deltas** to prevent out-of-order errors when syncing offline queues.
 
-#### Offline Stats Queuing & Delta Aggregation:
+#### Offline Stats Queuing, Double-Buffering & Delta Aggregation:
 To prevent offline telemetry from causing save progress loss:
-1. **Queue Partitioning**: Player Stats updates must be stored in a dedicated offline Stats Queue that is entirely separate from P-002's 10-slot persistence (`WGCP.storage.save`) queue. High-frequency stat updates will never evict core save slots.
-2. **In-Memory Delta Aggregation**: The Stats Queue aggregates updates for identical stat IDs in memory. If a game registers multiple delta updates for a stat (e.g. `incrementStat('gold', 1)` followed by `incrementStat('gold', 50)`), they are consolidated into a single aggregated queue update (e.g., `gold += 51`) occupying exactly one queue slot. The queue size is capped to 100 unique stat IDs.[^i007-proposal-security-audit]
+1. **Queue Partitioning**: Player Stats updates are stored in a dedicated offline Stats Queue that is entirely separate from P-002's 10-slot persistence (`WGCP.storage.save`) queue. High-frequency stat updates will never evict core save slots.[^i007-proposal-security-audit]
+2. **Double-Buffering Delta Engine**: The Stats Queue maintains a two-stage buffer (Active Buffer and In-Flight Batch) to prevent concurrency races between game updates and network flushes:
+   * **Active Buffer**: Consolidates incoming numerical updates per `statId` in memory. If a game registers multiple delta updates (e.g. `incrementStat('gold', 1)` followed by `incrementStat('gold', 50)`), they consolidate into a single entry (`gold += 51`) occupying exactly one queue slot.
+   * **`setStat` vs `incrementStat` Coalescing**:
+     $$\begin{array}{|l|l|l|}
+     \hline
+     \textbf{Existing Entry } (E_{\text{active}}) & \textbf{New Operation } (O_{\text{new}}) & \textbf{Resulting Entry } (E'_{\text{active}}) \\
+     \hline
+     \emptyset \text{ (None)} & \text{DELTA}(d) & \text{DELTA}(d) \\
+     \emptyset \text{ (None)} & \text{SET}(v) & \text{SET}(v) \\
+     \text{DELTA}(d_1) & \text{DELTA}(d_2) & \text{DELTA}(d_1 + d_2) \\
+     \text{DELTA}(d_1) & \text{SET}(v) & \text{SET}(v) \\
+     \text{SET}(v_1) & \text{DELTA}(d_2) & \text{SET}(v_1 + d_2) \\
+     \text{SET}(v_1) & \text{SET}(v_2) & \text{SET}(v_2) \\
+     \hline
+     \end{array}$$
+   * **In-Flight Batch Swapping & Idempotent `batchId`**: Upon initiating a flush, the Active Buffer is swapped into an In-Flight Batch tagged with a unique `batchId` (UUIDv4). New game updates continue into a clean Active Buffer without main thread stalling.
+   * **Idempotent Acknowledgment & Re-Merge on NACK**: The Portal backend logs processed `batchId`s to prevent duplicate counting during network retries. On ACK (`WGCP_STATS_ACK`), the in-flight batch is dropped and verified server state is stored in `stats_cache`. On NACK or timeout, the in-flight batch is atomically re-merged into the Active Buffer:
+     - In-Flight `DELTA` + Active $\emptyset \rightarrow \text{DELTA}(d_{\text{inf}})$
+     - In-Flight `DELTA` + Active `DELTA` $\rightarrow \text{DELTA}(d_{\text{inf}} + d_{\text{act}})$
+     - In-Flight `DELTA` + Active `SET` $\rightarrow \text{SET}(v_{\text{act}})$
+     - In-Flight `SET` + Active `DELTA` $\rightarrow \text{SET}(v_{\text{inf}} + d_{\text{act}})$
+     - In-Flight `SET` + Active `SET` $\rightarrow \text{SET}(v_{\text{act}})$
+3. **Local Durability & Crash Recovery**: To prevent progress loss if the browser tab crashes or closes while offline, active queue deltas are persisted to an isolated IndexedDB object store (`stats_queue` in `wgcp_storage_<gameId>`) with a 100ms debounce. On boot, un-flushed deltas are restored into the active queue.
+4. **Read-Your-Own-Writes Consistency**: Calls to `getStat(statId)` and `getStats()` immediately return the monotonic coalesced value:
+   $$\text{Value}_{\text{effective}} = \text{Value}_{\text{synced}} + \Delta_{\text{in-flight}} + \Delta_{\text{active}}$$
+   (or the latest active `SET` value), guaranteeing immediate visibility of writes before server ACK.
+5. **Queue Bounds & Transmission Limits**:
+   * **Unique Key Capacity**: Maximum 100 unique `statId` entries. Adding a 101st distinct stat key while offline or un-flushed rejects with `ERROR_QUEUE_FULL`.
+   * **Debounce & Flush Intervals**: Updates flush after a debounce window of 1,500ms of inactivity, or when a hard throttle ceiling of 5,000ms is reached during continuous updates.
+   * **Batch Transmission Size**: Flushes are chunked to a maximum of 50 stat entries per `postMessage` envelope.
+   * **Numeric Validation**: All amounts must be finite numbers. `NaN`, `Infinity`, and non-numeric inputs immediately reject with `ERROR_INVALID_PARAMETER`. Values are bounded to `Number.MAX_SAFE_INTEGER`.
+6. **Lifecycle Flush Triggers**: The SDK triggers an immediate flush on `document.visibilitychange` (`hidden`), `window.pagehide`, and prior to iframe unmounting.
 
 #### Methods:
 ```typescript
+interface StatOperation {
+  op: 'DELTA' | 'SET';
+  value: number; // delta amount or absolute target value
+}
+
+interface StatDeltaPayload {
+  batchId: string;       // Unique UUIDv4 for flush idempotency
+  timestamp: number;
+  operations: Record<string, StatOperation>;
+}
+
 interface PlayerStat {
   statId: string;
   value: number;
@@ -260,7 +301,7 @@ interface PersonalBest {
   metadata?: string;
 }
 
-// Retrieves a specific stat value
+// Retrieves a specific stat value (monotonic coalesced: synced + in-flight + active)
 function getStat(statId: string): Promise<number>;
 
 // Sets a stat value directly
@@ -275,8 +316,6 @@ function getStats(): Promise<PlayerStat[]>;
 // Retrieves the player's personal high-water mark for a leaderboard
 function getPersonalBest(leaderboardId: string): Promise<PersonalBest | null>;
 ```
-
-* **Stat-Driven Integrations**: Portal configuration allows linking specific stats directly to achievements or leaderboards (e.g., incrementing the stat `rat_kills` past 100 automatically unlocks the "Rat Exterminator" achievement in the backend, and updates the leaderboard).
 
 ---
 
@@ -311,7 +350,15 @@ All service failures returned by the parent portal or backend must map to a unif
 interface WGCPError {
   code: string;         // Standardized system error code
   message: string;      // Human-readable debug description
-  details?: Record<string, any>;
+  details?: {
+    queueType?: 'STORAGE' | 'STATS';
+    maxCapacity?: number;
+    currentSize?: number;
+    statId?: string;
+    slot?: string;
+    retryAfterMs?: number;
+    [key: string]: any;
+  };
 }
 ```
 
@@ -322,13 +369,20 @@ interface WGCPError {
 | `ERROR_NOT_INITIALIZED` | Service function called before `WGCP.init()` handshake resolves. | Call `WGCP.init()` and wait for resolution. |
 | `ERROR_UNAUTHENTICATED` | Action requires logged-in user but player is a guest. | SDK falls back to guest mode or prompts login. |
 | `ERROR_RATE_LIMIT` | Game is emitting too many telemetries or save calls. | Implement debouncing inside game client logic. |
+| `ERROR_INVALID_PARAMETER` | Parameter type mismatch, `NaN`/`Infinity`, or invalid key format. | Validate arguments before calling SDK methods. |
 | `ERROR_IDEMPOTENCY_CONFLICT` | Achievement/score transaction has already been processed. | Discard duplicate message safely. |
 | `ERROR_TAMPER_DETECTED` | Payload checksum or backend token validation failed. | Reject write, reset session parameters. |
 | `ERROR_PORTAL_DISCONNECTED`| Communication with parent window has timed out. | Fall back immediately to offline-first local cache. |
 | `ERROR_SYNC_PENDING_RESOLUTION`| Save called while a sync conflict resolution overlay is active. | Reject save immediately, prompt resolution. |
-| `ERROR_QUEUE_FULL` | Synchronization queue is full. | Warn player, restrict further writes until online. |
+| `ERROR_QUEUE_FULL` | Synchronization queue or Stats queue capacity exceeded. | Warn player, restrict further writes until online. |
+| `ERROR_SYNC_ABORTED` | In-flight save was cancelled because user discarded local progress. | Clean up pending callbacks, rehydrate state. |
+| `ERROR_MIGRATION_IN_PROGRESS` | Storage operation called while guest account is migrating. | Retry operation after `onPlayerChanged` fires. |
 
-[^i005-boundary-audit]: WGCP SDK Completeness and Boundary Scrutiny
-[^i006-leaderboard-identity-audit]: Leaderboard & Identity Boundary Audit
-[^i007-proposal-security-audit]: Proposal Security, Race-Condition, and Queue Audit
+---
 
+## 5. References & Audit Notes
+
+[^i005-boundary-audit]: WGCP SDK Completeness and Boundary Scrutiny (`/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md`)
+[^i006-leaderboard-identity-audit]: Leaderboard & Identity Boundary Audit (`/investigations/I-006-leaderboard-identity-boundary-audit.md`)
+[^i007-proposal-security-audit]: Proposal Security, Race-Condition, and Queue Audit (`/investigations/I-007-proposal-security-race-queue-audit.md`)
+[^i008-proposals-iterative-scrutiny]: Proposals Iterative Scrutiny and Hardening Report (`/investigations/I-008-proposals-iterative-scrutiny.md`)
