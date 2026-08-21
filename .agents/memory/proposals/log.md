@@ -1,5 +1,11 @@
 # Proposals Update Log
 
+## 2026-08-21
+* **Update**: Revised [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to bind the leaderboard score-verification token to a telemetry snapshot and define single-use/expiry and offline-queue-exclusion rules, per findings in [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md).
+* **Update**: Revised [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to require `event.source`-only game identity derivation (removing the unsound `document.activeElement` alternative) and to exclude untrusted-claim calls from the offline sync queue, per findings in [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md).
+* **Update**: Revised [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to trim the game-facing telemetry surface (dropping `gameLoadingFinished`/`gameplayStart`/`gameplayStop` in favor of portal-derived lifecycle signals) and to codify `gameId` derivation from `event.source` across all service modules, per findings in [`I-005-sdk-completeness-and-boundary-scrutiny.md`](/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md).
+* **Update**: Revised [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to fix a proven offline-sync data-loss failure mode by introducing dirty-state tracking and explicit conflict intervention, and to document the rejection of a transparent `localStorage` interceptor, per findings in [`I-005-sdk-completeness-and-boundary-scrutiny.md`](/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md).
+
 ## 2026-08-18
 * **Update**: Expanded [`P-003-game-sdk-services-api.md`](file://./P-003-game-sdk-services-api.md) to integrate stats, progressions, and personal best tracking modules.
 * **Creation**: Added proposal file [`P-003-game-sdk-services-api.md`](file://./P-003-game-sdk-services-api.md) defining the Game Services API Specification.

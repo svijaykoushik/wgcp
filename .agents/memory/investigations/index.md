@@ -9,4 +9,5 @@ This directory holds diagnostics, debugging trails, and active issue investigati
 * [Platform Stats & Progression Models](I-003-platform-stats-progression-model.md) - Technical analysis of Steamworks, Epic Online Services (EOS), and PlayFab statistics, achievements, personal bests, and player progression integration systems.
 * [Memory Catalog Pathing and Portability Alignment Analysis](I-004-memory-spec-pathing-portability.md) - Investigation and resolution of pathing ambiguity, footnote citation specifications, and environment-portability bugs in the memory catalog.
 * [WGCP SDK Completeness and Boundary Scrutiny](I-005-sdk-completeness-and-boundary-scrutiny.md) - Architectural completeness audit, monotonic revision offline data-loss proof, localStorage proxy trade-offs, and communication boundary verification.
+* [Leaderboard & Identity Boundary Audit](I-006-leaderboard-identity-boundary-audit.md) - Paper audit of the leaderboard score-verification flow and game-identity derivation mechanism proposed in P-002 and P-003, conducted prior to any implementation.
 

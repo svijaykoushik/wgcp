@@ -19,6 +19,12 @@ sources:
   - id: platform-stats-analysis
     resource: /investigations/I-003-platform-stats-progression-model.md
     title: Platform Stats & Progression Models
+  - id: i005-boundary-audit
+    resource: /investigations/I-005-sdk-completeness-and-boundary-scrutiny.md
+    title: WGCP SDK Completeness and Boundary Scrutiny
+  - id: i006-leaderboard-identity-audit
+    resource: /investigations/I-006-leaderboard-identity-boundary-audit.md
+    title: Leaderboard & Identity Boundary Audit
 ---
 
 # Game Services API Specification (P-003)
@@ -53,11 +59,14 @@ To enforce security and reliability, services are divided into clear operational
 | **Achievements** | Invokes unlock/increment actions (with transaction ID). | Renders visual unlock notification banners. | Validates idempotency, updates player achievement tables. | **Self-Trusted Event** (Score limits validated backend) |
 | **Leaderboards** | Submits score payload, queries active leaderboard lists. | Injects tamper-resistant portal signature headers. | Performs check validation (velocity, anomaly, signature checks). | **Untrusted Claim** (Rigorous backend audit) |
 | **System Settings** | Subscribes to events, reads locale/theme/audio constraints. | Detects browser language/system mute, notifies iframe. | Saves user preferences across multiple portal boots. | **Medium Trust** (Sync client preferences) |
-| **Telemetry** | Emits lifecycle states (e.g., loading finished, play start). | Appends session details, logs client browser performance. | Accumulates usage metrics and builds console dashboard. | **Self-Trusted Metrics** |
+| **Telemetry** | Emits performance events only; load/play lifecycle is derived by the portal wrapper, not the SDK.[^i005-boundary-audit] | Derives loading/gameplay lifecycle from iframe DOM & focus events, appends session details, logs client browser performance. | Accumulates usage metrics and builds console dashboard. | **Self-Trusted Metrics** |
 | **Player Stats** | Sets/increments numerical stat counters (with delta parameters). | Binds updates, manages offline queue. | Aggregates stat values, updates progress parameters. | **Self-Trusted Event** (Validated against bounds) |
 | **Progressions** | Queries level details, adds experience points. | Coordinates leveling unlocks or animation events. | Computes XP thresholds, evaluates leveling curves. | **Untrusted Claim** (Validated server-side) |
 
-### 2.2. Deferred Capabilities
+### 2.2. Game Identity in Service Calls
+All service modules below (Achievements, Leaderboards, Player Stats, Progression) resolve the acting game context the same way P-002 resolves it for storage: the portal derives `gameId` by matching the `postMessage` event's `event.source` against the content window reference of the spawned iframe element. No module payload includes a client-declared `gameId` field, and the portal backend **must not** trust one if present — this prevents a compromised game iframe from writing achievements, scores, or stats against another game's identity.[^i005-boundary-audit]
+
+### 2.3. Deferred Capabilities
 To ensure a focus on stability, the following features are excluded from this specification and deferred to future proposals:
 * **Multiplayer Matchmaking Lobbies**: Real-time room allocation, matchmaking queues, and NAT traversal. (Deferred: Games must manage their own servers, e.g. `BrowserQuest`).
 * **Monetization & Ads**: Video ad triggers, commercial breaks, rewarded ad flows.
@@ -160,10 +169,12 @@ function getScores(leaderboardId: string, query?: LeaderboardQuery): Promise<Sco
 ```
 
 #### Score Submission Verification Flow:
-To prevent players from submitting artificial high scores, score submission uses a two-phase check:
+To prevent players from submitting artificial high scores, score submission uses a two-phase check. The verification token authenticates that a submission passed through the brokered portal channel, but a token alone does **not** vouch for any particular score value — it must be explicitly bound to a plausibility snapshot at issuance, or the flow only stops unbrokered forgery while leaving a compromised-but-brokered game client free to submit an arbitrary score.[^i006-leaderboard-identity-audit]
+
 1. When `submitScore` is called, the SDK requests a score transaction token from the parent portal.
-2. The portal registers a temporary write transaction with the backend, embedding client telemetry details (session length, game activity).
-3. The server validates this verification token when the score payload is submitted, rejecting direct, non-brokered requests.
+2. The portal registers a temporary write transaction with the backend, embedding a **telemetry snapshot** (session length, game activity, and any `reportPerformance`/stat signals observed for this session so far). This snapshot is bound to the issued token, not just logged alongside it.
+3. The token is **single-use and short-lived**: it is invalidated on first redemption and expires after a bounded window (default: same order of magnitude as typical session length for the game, configured per leaderboard). Untrusted-claim calls (`submitScore`, `unlockAchievement`) are excluded from the offline sync queue defined in [P-002 §2.4](/proposals/P-002-game-sdk-storage-sync.md) — a token issued before going offline cannot be redeemed after reconnecting once expired, and queuing a submission for later delivery would let its embedded telemetry snapshot go stale relative to the score it is meant to justify.[^i006-leaderboard-identity-audit]
+4. The server validates the verification token when the score payload is submitted, rejecting direct, non-brokered requests **and** rejecting scores that are implausible given the token's bound telemetry snapshot (e.g. a score requiring far more gameplay activity than the snapshot's session length/game-activity data supports).
 
 ---
 
@@ -204,21 +215,10 @@ sequenceDiagram
 ---
 
 ### 3.5. Telemetry & Lifecycle Module (`WGCP.telemetry`)
-Tracks game startup, runtime durations, and client-side performance, helping to compile the console metrics dashboard.
+Tracks client-side performance to help compile the console metrics dashboard. Loading-complete and gameplay start/stop lifecycle events are **not** part of the game-facing contract: the portal wrapper derives them without game code — `gameLoadingFinished` from the iframe's native DOM `onLoad` event, and `gameplayStart`/`gameplayStop` from iframe focus/blur transitions. Requiring explicit SDK calls for signals the host can already observe adds integration burden without adding information.[^i005-boundary-audit]
 
 #### Methods:
 ```typescript
-type LoadingPhase = 'assets_loading' | 'engine_initializing' | 'complete';
-
-// Signals that the game loader is done and the title is ready to play.
-function gameLoadingFinished(phase: LoadingPhase): void;
-
-// Signals gameplay starting (e.g., player exits main menu, level starts).
-function gameplayStart(): void;
-
-// Signals gameplay ending (e.g., player returns to main menu, player dies).
-function gameplayStop(): void;
-
 // Reports a custom performance event (e.g., framerate drops).
 function reportPerformance(fps: number, memoryUsage?: number): void;
 ```
@@ -302,9 +302,12 @@ interface WGCPError {
 
 | Error Code | Meaning | Remediation / Handling |
 | :--- | :--- | :--- |
-| `ERROR_NOT_INITIALIZED` | SDK functions called before `WGCP.init()` handshake. | Call `WGCP.init()` and wait for resolution. |
+| `ERROR_NOT_INITIALIZED` | Service function called before `WGCP.init()` handshake resolves. | Call `WGCP.init()` and wait for resolution. |
 | `ERROR_UNAUTHENTICATED` | Action requires logged-in user but player is a guest. | SDK falls back to guest mode or prompts login. |
 | `ERROR_RATE_LIMIT` | Game is emitting too many telemetries or save calls. | Implement debouncing inside game client logic. |
 | `ERROR_IDEMPOTENCY_CONFLICT` | Achievement/score transaction has already been processed. | Discard duplicate message safely. |
 | `ERROR_TAMPER_DETECTED` | Payload checksum or backend token validation failed. | Reject write, reset session parameters. |
 | `ERROR_PORTAL_DISCONNECTED`| Communication with parent window has timed out. | Fall back immediately to offline-first local cache. |
+
+[^i005-boundary-audit]: WGCP SDK Completeness and Boundary Scrutiny
+[^i006-leaderboard-identity-audit]: Leaderboard & Identity Boundary Audit

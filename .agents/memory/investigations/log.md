@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-08-21
+* **Creation**: Added [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md) detailing a paper audit of the leaderboard score-verification flow and game-identity derivation mechanism in P-002 and P-003.
+
 ## 2026-08-20
 * **Creation**: Added [`I-005-sdk-completeness-and-boundary-scrutiny.md`](/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md) detailing the SDK completeness audit, offline sync data-loss proof, localStorage proxy trade-offs, and communication boundary verification.
 

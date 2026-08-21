@@ -1,5 +1,11 @@
 # Directory Update Log
 
+## 2026-08-21
+* **Update**: Revised design proposals [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) and [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to close the identity-derivation and leaderboard-token gaps found in [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md).
+* **Creation**: Added investigation report [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md) auditing the leaderboard score-verification flow and game-identity derivation mechanism proposed in P-002 and P-003.
+* **Update**: Revised design proposal [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to trim the game-facing telemetry surface and codify `gameId` derivation across service modules, addressing boundary-scrutiny findings from [`I-005-sdk-completeness-and-boundary-scrutiny.md`](/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md).
+* **Update**: Revised design proposal [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to fix a proven offline-sync data-loss failure mode and document the rejection of a transparent `localStorage` interceptor, addressing findings from [`I-005-sdk-completeness-and-boundary-scrutiny.md`](/investigations/I-005-sdk-completeness-and-boundary-scrutiny.md).
+
 ## 2026-08-18
 * **Update**: Standardized and aligned `memory_spec.md` with OKF v0.2 spec for path resolution and footnote citations, resolving hardcoded environment-specific absolute filesystem paths across the catalog.
 * **Creation**: Added investigation report [`I-004-memory-spec-pathing-portability.md`](/investigations/I-004-memory-spec-pathing-portability.md) documenting memory spec pathing and portability analysis.
