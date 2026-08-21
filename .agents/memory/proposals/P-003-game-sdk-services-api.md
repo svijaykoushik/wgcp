@@ -179,7 +179,7 @@ To prevent players from submitting artificial high scores, score submission uses
 ---
 
 ### 3.4. System Settings & Locale Module (`WGCP.system`)
-Enables the game to adapt to system preferences configured on the console portal dashboard.
+Enables the game to adapt to system preferences configured on the console portal dashboard and respond to UI lifecycle events (pause/resume).
 
 #### Methods:
 ```typescript
@@ -195,7 +195,19 @@ function getSettings(): SystemSettings;
 
 // Registers listener to update UI when settings shift.
 function onSettingsChanged(callback: (settings: SystemSettings) => void): void;
+
+// Registers listener to pause game rendering/loops when the portal overlays open.
+function onPause(callback: () => void): void;
+
+// Registers listener to resume game rendering/loops when the portal overlays close.
+function onResume(callback: () => void): void;
 ```
+
+#### Overlay Input & Execution Handling:
+When displaying the system menu, conflict resolution modal, or other overlays:
+1. The Portal wrapper emits a `WGCP_PAUSE` postMessage to the iframe, triggering the game's `onPause` callback.
+2. The Portal must assign the `inert` attribute or set the iframe's `tabIndex = -1` to prevent keyboard or gamepad focus leaks.
+3. Upon closing the overlay, the Portal removes the input block and posts `WGCP_RESUME`, triggering the game's `onResume` callback.[^i007-proposal-security-audit]
 
 #### Lifecycle Synchronization (Locale Example):
 ```mermaid
@@ -227,6 +239,11 @@ function reportPerformance(fps: number, memoryUsage?: number): void;
 
 ### 3.6. Player Stats Module (`WGCP.stats`)
 Provides a structured model for storing, retrieving, and incrementing numerical counters. Following the pattern established by EOS and Steamworks, updating a statistic uses **deltas** to prevent out-of-order errors when syncing offline queues.
+
+#### Offline Stats Queuing & Delta Aggregation:
+To prevent offline telemetry from causing save progress loss:
+1. **Queue Partitioning**: Player Stats updates must be stored in a dedicated offline Stats Queue that is entirely separate from P-002's 10-slot persistence (`WGCP.storage.save`) queue. High-frequency stat updates will never evict core save slots.
+2. **In-Memory Delta Aggregation**: The Stats Queue aggregates updates for identical stat IDs in memory. If a game registers multiple delta updates for a stat (e.g. `incrementStat('gold', 1)` followed by `incrementStat('gold', 50)`), they are consolidated into a single aggregated queue update (e.g., `gold += 51`) occupying exactly one queue slot. The queue size is capped to 100 unique stat IDs.[^i007-proposal-security-audit]
 
 #### Methods:
 ```typescript
@@ -308,6 +325,10 @@ interface WGCPError {
 | `ERROR_IDEMPOTENCY_CONFLICT` | Achievement/score transaction has already been processed. | Discard duplicate message safely. |
 | `ERROR_TAMPER_DETECTED` | Payload checksum or backend token validation failed. | Reject write, reset session parameters. |
 | `ERROR_PORTAL_DISCONNECTED`| Communication with parent window has timed out. | Fall back immediately to offline-first local cache. |
+| `ERROR_SYNC_PENDING_RESOLUTION`| Save called while a sync conflict resolution overlay is active. | Reject save immediately, prompt resolution. |
+| `ERROR_QUEUE_FULL` | Synchronization queue is full. | Warn player, restrict further writes until online. |
 
 [^i005-boundary-audit]: WGCP SDK Completeness and Boundary Scrutiny
 [^i006-leaderboard-identity-audit]: Leaderboard & Identity Boundary Audit
+[^i007-proposal-security-audit]: Proposal Security, Race-Condition, and Queue Audit
+

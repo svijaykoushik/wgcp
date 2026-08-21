@@ -38,8 +38,8 @@ The console portal maintains strict isolation boundaries. The hosted game iframe
 ### 1.2. Hardened `postMessage` Protocol
 All communication between the SDK inside the iframe and the Console Portal uses `window.postMessage`. Both ends must validate inputs strictly:
 1. **Origin Verification**:
-   * The SDK must listen only to messages originating from the verified portal host (configured on SDK initialization or dynamically inferred from parent environment).
-   * The Portal must verify that `event.origin` matches the host registered for the specific game in the registry (`games.json`).
+   * **SDK Parent Verification**: The SDK must listen only to messages originating from a verified portal host. **Dynamic origin inference** (e.g., parsing `document.referrer` or reading `window.parent.location.href`) **is banned** due to referrer-spoofing risks from framed environments. Allowed portal origins must be explicitly passed via initialization configuration (`init({ allowedOrigins: [...] })`) or built directly into the SDK environment parameters.[^i007-proposal-security-audit]
+   * **Portal Game Verification**: The Portal wrapper must verify that the incoming `event.origin` matches the registered hostname for that game in the registry (`games.json`) exactly. To prevent bypasses from wildcard subdomains or loose regex matching, the Portal must parse origins via the browser's native `URL` parser (`new URL(event.origin)`) and verify that the `protocol`, `hostname`, and `port` (where registered) are an exact match.[^i007-proposal-security-audit]
 2. **Schema Validation**: All incoming and outgoing payloads must conform to the standard message envelope. Unrecognized message structures, unknown types, or malformed correlation IDs must be discarded immediately.
 
 ### 1.3. Game Identity Verification (`gameId` Derivation)
@@ -111,10 +111,11 @@ sequenceDiagram
 * **Monotonic Revisions**: Every state write is incremented with a server-assigned monotonic revision number (e.g. `revision: 12`). If the client attempts to write a state without knowing the current server revision, or uses an outdated sequence number, the portal returns a revision conflict error.
 * **Dirty-State Tracking**: The local cache record stores a `dirty` flag and a `lastSyncedRevision` distinct from its working `localRevision`. `dirty` is set on any `saveState` write that has not yet received a server ACK, and cleared only on confirmed sync. This distinguishes "cloud is simply newer" (safe to pull) from "local has unsynced writes AND cloud has moved independently" (a genuine conflict).[^i005-boundary-audit]
 * **Conflict Intervention**: A write conflict — defined as `dirty == true` while `Cloud Revision > lastSyncedRevision` — **must never** be resolved by silently overwriting the local cache with the cloud payload, even though the cloud revision is numerically higher. The portal triggers a user interface dialog allowing the player to select the active save track (discarding local changes or overriding cloud), or applies an automatic non-destructive merge where the data model supports it.[^i005-boundary-audit]
+* **Sync State-Locking**: While the conflict resolution UI overlay is active, the SDK **must lock** all save operations. Any subsequent calls to `WGCP.storage.save` (or `saveState`) during this state must be rejected immediately with code `ERROR_SYNC_PENDING_RESOLUTION` to prevent stacked pending promises and memory leaks. If the user selects the cloud save option (discarding local progress), all pending local save promises must be immediately rejected.[^i007-proposal-security-audit]
 
 ### 2.4. Queue Management & Deduplication
 1. **Deduplication**: If multiple `saveState` calls target the same slot during an offline session, only the latest state is stored in the sync queue; redundant intermediate saves are pruned.
-2. **Queue Bounds**: The synchronization queue has a maximum payload limit (default: 10 operations). Once exceeded, older saves are dropped (excluding high-priority telemetry) to prevent infinite memory growth, and the user is warned of disconnected save states.
+2. **Queue Bounds**: The synchronization queue has a maximum payload limit (default: 10 operations). Once exceeded, further saves must be rejected and return an `ERROR_QUEUE_FULL` error to allow the game client to warn the player of disconnected save failures, rather than silently dropping data.[^i007-proposal-security-audit]
 3. **Untrusted-Claim Exclusion**: Self-trusted persistence writes (`saveState`) queue normally per the rules above. Untrusted-claim calls defined by services built on this transport (e.g. leaderboard score submissions, achievement unlocks) **must not** be queued for later offline delivery — any verification token or transaction context bound to those calls at issue time goes stale while queued, undermining the trust guarantees the calling service relies on. Services with untrusted-claim semantics must fail or retry those calls online-only, not via this queue.[^i006-leaderboard-identity-audit]
 
 ---
@@ -144,7 +145,8 @@ A unified experience requires supporting transition flows for guests logging int
 When a player starts a session anonymously (guest mode) and subsequently logs in to the console portal:
 1. The portal prompts the user to link their guest progress.
 2. The SDK sends the local anonymous data package via the `associateAnonymousAccount()` flow.
-3. The Portal validates this request, writes the data to the newly authenticated cloud profile, and updates the active `playerId`.
+3. **Sequential Phase-Locking**: To prevent race conditions where the game's `onPlayerChanged` callback fires and triggers a `loadState()` of old cloud data *before* the local guest save finishes uploading, the Portal wrapper must enforce a locked workflow: it must wait for the database migration transaction to complete successfully **before** updating the active `playerId` and notifying the SDK of the identity change.[^i007-proposal-security-audit]
+4. The Portal validates this request, writes the data to the newly authenticated cloud profile, and updates the active `playerId` once phase-locked tasks resolve.
 
 ```mermaid
 graph TD
@@ -172,45 +174,39 @@ All achievement unlocks must be strictly idempotent. The message envelope must a
 ### 5.3. SDK API Interface Refinement
 The revised API provides separation between local caching (immediate return) and remote synchronization verification:
 
-```javascript
 window.WGCP = {
   // Initialization - resolves when handshake completes
   init: function(options) {
     return new Promise((resolve, reject) => { ... });
   },
 
-  // Save progress - resolves when written to local IndexedDB. 
-  // An optional onSync callback notifies when the remote portal backend ACK is received.
-  saveState: function(slot, data, onSync) {
-    return new Promise((resolve, reject) => { ... });
-  },
+  // Storage persistent module
+  storage: {
+    // Save progress - resolves when written to local IndexedDB. 
+    // An optional onSync callback notifies when the remote portal backend ACK is received.
+    save: function(slot, data, onSync) {
+      return new Promise((resolve, reject) => { ... });
+    },
 
-  // Load progress - retrieves state from local cache or fetches from cloud if newer
-  loadState: function(slot) {
-    return new Promise((resolve, reject) => { ... });
-  },
+    // Load progress - retrieves state from local cache or fetches from cloud if newer
+    load: function(slot) {
+      return new Promise((resolve, reject) => { ... });
+    },
 
-  // Delete slot - deletes data from both local cache and parent portal storage
-  deleteState: function(slot) {
-    return new Promise((resolve, reject) => { ... });
+    // Delete slot - deletes data from both local cache and parent portal storage
+    delete: function(slot) {
+      return new Promise((resolve, reject) => { ... });
+    }
   },
 
   // WASM Utility - triggers Emscripten FS.syncfs
   syncFS: function() {
     return new Promise((resolve, reject) => { ... });
-  },
-
-  // Untrusted Claim - Submits score to Leaderboard
-  submitScore: function(score, metadata) {
-    return new Promise((resolve, reject) => { ... });
-  },
-
-  // Untrusted Claim - Unlocks achievement idempotently
-  unlockAchievement: function(achievementId) {
-    return new Promise((resolve, reject) => { ... });
   }
 };
-```
+// Note: Service claim APIs (Achievements and Leaderboards) are excluded from the core transport 
+// namespace window.WGCP, and reside inside their respective modular namespaces in P-003.
 
 [^i005-boundary-audit]: WGCP SDK Completeness and Boundary Scrutiny
-[^i006-leaderboard-identity-audit]: Leaderboard & Identity Boundary Audit
+[^i006-leaderboard-identity-boundary-audit]: Leaderboard & Identity Boundary Audit
+[^i007-proposal-security-audit]: Proposal Security, Race-Condition, and Queue Audit
