@@ -27,3 +27,17 @@ node_modules/
 # Production builds
 dist/
 build/
+
+# Local bundler and test caches
+.vite/
+test-results/
+
+# Editor and Tooling Workspace directories
+.obsidian/
+
+# Agent execution workspaces (excluding memory & skills catalogs)
+.agents/*/
+!.agents/memory/
+!.agents/skills/
+.agents/*.md
+

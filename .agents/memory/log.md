@@ -1,5 +1,8 @@
 # Directory Update Log
 
+## 2026-08-27
+* **Creation**: Added design proposal [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) for viewport-first game launch refactoring.
+
 ## 2026-08-21
 * **Creation**: Added investigation report [`I-008-proposals-iterative-scrutiny.md`](/investigations/I-008-proposals-iterative-scrutiny.md) containing a three-round iterative audit examining the Emscripten FS bridge, binary data transfer, telemetry limit, and queue boundaries.
 * **Creation**: Added investigation report [`I-007-proposal-security-and-queue-audit.md`](/investigations/I-007-proposal-security-and-queue-audit.md) auditing P-002 and P-003 on postMessage origin hijacking, pending promise stacking, queue sharing, and session migration race conditions.

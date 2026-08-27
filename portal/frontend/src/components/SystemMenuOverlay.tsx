@@ -5,9 +5,17 @@ interface SystemMenuOverlayProps {
   game: Game;
   onResume: () => void;
   onExit: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
-export function SystemMenuOverlay({ game, onResume, onExit }: SystemMenuOverlayProps) {
+export function SystemMenuOverlay({ 
+  game, 
+  onResume, 
+  onExit,
+  isFullscreen,
+  onToggleFullscreen
+}: SystemMenuOverlayProps) {
   const trapRef = useFocusTrap(true);
 
   return (
@@ -40,6 +48,13 @@ export function SystemMenuOverlay({ game, onResume, onExit }: SystemMenuOverlayP
             className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all active:scale-95 console-focusable cursor-pointer"
           >
             ▶ Resume Game
+          </button>
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            className="w-full py-3 px-4 bg-bg-primary hover:bg-bg-primary/80 border border-white/12 text-text-muted hover:text-white font-semibold rounded-xl transition-all active:scale-95 console-focusable cursor-pointer"
+          >
+            {isFullscreen ? '⛶ Exit Fullscreen' : '⛶ Enter Fullscreen'}
           </button>
           <button
             type="button"

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Game } from '../types';
 import { SystemMenuOverlay } from '../components/SystemMenuOverlay';
 import { LaunchSequence } from '../components/LaunchSequence';
+import { verifyPostMessageOrigin, validateRPCMessageEnvelope } from '../utils/security';
 
 interface LauncherViewProps {
   game: Game;
@@ -12,6 +13,11 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
   const [isLaunching, setIsLaunching] = useState(true);
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(
+    () => typeof document !== 'undefined' && !!(
+      document.fullscreenElement || (document as any).webkitFullscreenElement
+    )
+  );
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const focusTimersRef = useRef<number[]>([]);
@@ -50,21 +56,8 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
   };
 
   // Handle launch ceremony transition completion
-  const handleLaunchComplete = async () => {
+  const handleLaunchComplete = () => {
     setIsLaunching(false);
-
-    // Request browser fullscreen when iframe starts loading
-    const el = document.documentElement;
-    try {
-      if (el.requestFullscreen) {
-        await el.requestFullscreen();
-      } else if ((el as any).webkitRequestFullscreen) {
-        await (el as any).webkitRequestFullscreen();
-      }
-    } catch (err) {
-      console.warn('Fullscreen declined/unsupported', err);
-    }
-
     scheduleAsyncFocus();
   };
 
@@ -96,6 +89,7 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
         document.fullscreenElement ||
         (document as any).webkitFullscreenElement
       );
+      setIsFullscreen(isFs);
       if (!isFs && !isClosing && !isOverlayOpen) {
         setIsOverlayOpen(true);
       }
@@ -110,13 +104,92 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
     };
   }, [isLaunching, isClosing, isOverlayOpen]);
 
-  const resumeGame = async () => {
+  // Listen for postMessages from the game iframe (e.g. for Web API permission requests)
+  useEffect(() => {
+    if (isLaunching) return;
+
+    let expectedGameOrigin = 'http://localhost';
+    try {
+      expectedGameOrigin = new URL(resolveGameUrl(game)).origin;
+    } catch (e) {
+      console.warn('Invalid game URL/origin:', e);
+    }
+
+    const handleMessage = async (event: MessageEvent) => {
+      const iframe = iframeRef.current;
+      if (!iframe || !iframe.contentWindow) return;
+
+      // Validate message provenance (both origin and the exact source contentWindow)
+      if (!verifyPostMessageOrigin(event, expectedGameOrigin, iframe.contentWindow)) {
+        return;
+      }
+
+      // Validate envelope structure and type
+      if (!validateRPCMessageEnvelope(event.data, 'WGCP_SDK')) {
+        return;
+      }
+
+      const { id, type, payload } = event.data;
+
+      // Handle permission request
+      if (type === 'WGCP_REQUEST_PERMISSION') {
+        const { permission } = payload || {};
+        let granted = false;
+        
+        if (permission === 'persistent-storage') {
+          try {
+            if (navigator.storage && navigator.storage.persist) {
+              granted = await navigator.storage.persist();
+            }
+          } catch (err) {
+            console.warn('Error requesting persistent storage permission:', err);
+          }
+        }
+
+        // Post the ACK back to the game iframe using explicit canonical origin
+        iframe.contentWindow.postMessage(
+          {
+            id,
+            type: 'WGCP_REQUEST_PERMISSION_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: {
+              permission,
+              granted,
+            },
+          },
+          expectedGameOrigin
+        );
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [isLaunching, game]);
+
+  const resumeGame = () => {
     setIsOverlayOpen(false);
+    scheduleAsyncFocus();
+  };
+
+  const toggleFullscreen = async () => {
     const isFs = !!(
       document.fullscreenElement ||
       (document as any).webkitFullscreenElement
     );
-    if (!isFs) {
+    if (isFs) {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        }
+      } catch (err) {
+        console.warn('Error exiting fullscreen', err);
+      }
+    } else {
       const el = document.documentElement;
       try {
         if (el.requestFullscreen) {
@@ -125,10 +198,9 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
           await (el as any).webkitRequestFullscreen();
         }
       } catch (err) {
-        console.warn('Fullscreen request failed on resume', err);
+        console.warn('Fullscreen request failed', err);
       }
     }
-    scheduleAsyncFocus();
   };
 
   const handleExitToLibrary = async () => {
@@ -194,6 +266,8 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
           game={game}
           onResume={resumeGame}
           onExit={handleExitToLibrary}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
         />
       )}
     </div>

@@ -69,11 +69,16 @@ function parseRegistryV2(data: any): Game[] {
     const releases = gameVal.releases || {};
     const releaseEntries = Object.entries(releases);
     if (releaseEntries.length > 0) {
-      const stableRelease = releaseEntries.find(([_, rel]: [string, any]) => 
-        Array.isArray(rel.releaseChannels) && rel.releaseChannels.includes('stable')
-      );
-      if (stableRelease) {
-        activeRelease = stableRelease[1];
+      const stableReleases = releaseEntries
+        .filter(([_, rel]: [string, any]) => 
+          Array.isArray(rel.releaseChannels) && rel.releaseChannels.includes('stable')
+        )
+        .map(([_, rel]) => rel);
+
+      if (stableReleases.length > 0) {
+        // Sort by 'added' timestamp descending to get the latest release
+        stableReleases.sort((a: any, b: any) => (b.added || 0) - (a.added || 0));
+        activeRelease = stableReleases[0];
       } else {
         activeRelease = releaseEntries[0][1];
       }

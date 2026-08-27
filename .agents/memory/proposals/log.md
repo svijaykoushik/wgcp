@@ -1,5 +1,8 @@
 # Proposals Update Log
 
+## 2026-08-27
+* **Creation**: Added proposal file [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) outlining the viewport-first game launch refactoring.
+
 ## 2026-08-21
 * **Update**: Revised [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to bind the leaderboard score-verification token to a telemetry snapshot and define single-use/expiry and offline-queue-exclusion rules, per findings in [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md).
 * **Update**: Revised [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) to require `event.source`-only game identity derivation (removing the unsound `document.activeElement` alternative) and to exclude untrusted-claim calls from the offline sync queue, per findings in [`I-006-leaderboard-identity-boundary-audit.md`](/investigations/I-006-leaderboard-identity-boundary-audit.md).
