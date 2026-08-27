@@ -1,5 +1,9 @@
 # Directory Update Log
 
+## 2026-08-28
+* **Update**: Updated status of proposal [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) to `accepted`.
+* **Creation**: Added decision [`D-004-game-launch-refactor.md`](/decisions/D-004-game-launch-refactor.md) committing the choice of default viewport game launches and paused settings fullscreen toggle.
+
 ## 2026-08-27
 * **Creation**: Added design proposal [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) for viewport-first game launch refactoring.
 

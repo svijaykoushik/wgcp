@@ -1,5 +1,8 @@
 # Proposals Update Log
 
+## 2026-08-28
+* **Status**: Updated proposal [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) status to `accepted` following implementation and E2E test validation.
+
 ## 2026-08-27
 * **Creation**: Added proposal file [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) outlining the viewport-first game launch refactoring.
 

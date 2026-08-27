@@ -3,7 +3,7 @@ type: Proposal
 proposal_id: P-004
 title: Viewport-First Game Launch Refactoring
 description: Refactor the game launch process to use full viewport by default rather than the Fullscreen API, pushing fullscreen options to the platform menu.
-status: proposed
+status: accepted
 generated: { by: antigravity/3.5, at: 2026-08-27T23:45:00+05:30 }
 sources:
   - id: launcherview-src
