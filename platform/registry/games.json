@@ -7,7 +7,7 @@
       "en-US": "Decentralized collection of hosted HTML5 games."
     },
     "address": "http://localhost",
-    "timestamp": 1788007629,
+    "timestamp": 1788007767,
     "releaseChannels": {
       "stable": {
         "name": {
@@ -30,7 +30,7 @@
     "browserquest": {
       "metadata": {
         "added": 1786800000,
-        "lastUpdated": 1787982594,
+        "lastUpdated": 1788007767,
         "license": "MPL-2.0 / CC-BY-SA 3.0",
         "upstream": "https://github.com/mozilla/BrowserQuest",
         "issueTracker": "",
@@ -77,7 +77,7 @@
           }
         },
         "stable-v1.0.0": {
-          "added": 1787982594,
+          "added": 1788007767,
           "version": "1.0.0",
           "releaseChannels": [
             "stable"
