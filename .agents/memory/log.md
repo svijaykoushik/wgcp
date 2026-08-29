@@ -1,6 +1,16 @@
 # Directory Update Log
 
 ## 2026-08-29
+* **Feasibility**: Assessed and successfully folded capturing-phase "Escape key forwarding" logic into the core SDK initialization (`WGCP.init`), automatically forwarding `WGCP_TOGGLE_MENU` events to the parent portal wrapper.
+* **Update**: Decoupled the built SDK from the portal frontend container entirely, removing `portal/frontend/public/wgcp-sdk.js` and updating `/sdk/package.json` to copy assets solely to the Caddy-mounted gateway path.
+* **Refactoring**: Standardized and optimized UUIDv4 generation across all SDK files (`index.ts`, `storage/index.ts`, `stats/index.ts`, `services/index.ts`) to query browser `crypto.randomUUID` and `crypto.getRandomValues` first, before falling back to custom pseudo-random math generators. Replaced backend token generation with native `node:crypto` library.
+* **Implementation**: Completed full integration of the Game SDK and Portal Services (P-002, P-003, D-005):
+  * Designed and initialized a standalone module at `/sdk` with its own `package.json`, TypeScript configuration, and `tsup` bundler to build isomorphic browser modules (`wgcp-sdk.js`).
+  * Created Caddyfile routing and volume configuration to serve the static SDK directly from `http://wgcp-sdk.localhost/wgcp-sdk.js`.
+  * Expanded Drizzle ORM schemas in `portal/backend/src/schema.ts` to add database tables for saves, achievements, leaderboards, stats, and progression.
+  * Implemented Express backend REST controllers in `portal/backend/src/server.ts` with telemetry verification and idempotency handling.
+  * Integrated cross-origin script event broker and standard React components (`ConflictResolutionOverlay`) inside `portal/frontend/src/views/LauncherView.tsx`.
+* **Update**: Updated status of design proposals [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) and [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) to `accepted` following a successful platform feasibility analysis.
 * **Creation**: Added game integration runbook [`R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) and initialized the runbooks subdirectory with its own index and update logs.
 * **Update**: Updated specification [`memory_spec.md`](/memory_spec.md) to define the new `Runbook` concept type and `runbooks/` folder.
 * **Creation**: Added investigation report [`I-010-viewport-escape-regression.md`](/investigations/I-010-viewport-escape-regression.md) detailing the diagnostics and root causes of the viewport-first launch Escape key regression.

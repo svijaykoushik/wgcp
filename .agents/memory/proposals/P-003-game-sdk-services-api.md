@@ -3,7 +3,7 @@ type: Proposal
 proposal_id: P-003
 title: Game Services API Specification
 description: Proposal for the core game services SDK APIs (Identity, Achievements, Leaderboards, Settings, Telemetry, Stats, and Progression) running on the WGCP console platform.
-status: proposed
+status: accepted
 generated: { by: antigravity/2.0, at: 2026-08-18T22:55:00Z }
 verified: { by: human:vijaykoushik, at: 2026-08-21T18:15:00Z }
 sources:

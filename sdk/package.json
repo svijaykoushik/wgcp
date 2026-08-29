@@ -1,0 +1,15 @@
+{
+  "name": "wgcp-sdk",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/index.ts --format iife,esm --global-name WGCP --minify --sourcemap --out-dir dist && npm run build:copy",
+    "build:copy": "mkdir -p ../platform/sdk/ && cp dist/index.global.js ../platform/sdk/wgcp-sdk.js",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

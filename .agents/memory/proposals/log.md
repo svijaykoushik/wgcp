@@ -1,5 +1,8 @@
 # Proposals Update Log
 
+## 2026-08-29
+* **Status**: Updated proposals [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) and [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) status to `accepted` after completing the platform feasibility investigation and removing obsolete `WGCP.syncFS()` namespace leaks to align with the private compilation boundaries of WASM/Emscripten games.
+
 ## 2026-08-28
 * **Status**: Updated proposal [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) status to `accepted` following implementation and E2E test validation.
 

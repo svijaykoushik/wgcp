@@ -3,6 +3,7 @@ import { Game } from '../types';
 import { SystemMenuOverlay } from '../components/SystemMenuOverlay';
 import { LaunchSequence } from '../components/LaunchSequence';
 import { PermissionRequestOverlay } from '../components/PermissionRequestOverlay';
+import { ConflictResolutionOverlay } from '../components/ConflictResolutionOverlay';
 import { verifyPostMessageOrigin, validateRPCMessageEnvelope } from '../utils/security';
 
 interface LauncherViewProps {
@@ -26,6 +27,12 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
     )
   );
   const [pendingPermission, setPendingPermission] = useState<PendingPermissionRequest | null>(null);
+  const [pendingConflict, setPendingConflict] = useState<{
+    localState: any;
+    cloudState: any;
+    eventSource: Window;
+    eventOrigin: string;
+  } | null>(null);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const focusTimersRef = useRef<number[]>([]);
@@ -156,71 +163,298 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
       }
 
       const { id, type, payload } = event.data;
+      const contentWindow = iframe.contentWindow;
 
-      // Handle permission request
-      if (type === 'WGCP_REQUEST_PERMISSION') {
-        const { permission } = payload || {};
-        
-        if (permission === 'persistent-storage') {
-          const contentWindow = iframe.contentWindow;
-          if (navigator.storage && navigator.storage.persisted) {
-            navigator.storage.persisted().then((isPersisted) => {
-              if (isPersisted) {
-                contentWindow.postMessage(
-                  {
+      try {
+        if (type === 'WGCP_INIT') {
+          let cloudRevision = 0;
+          let cloudState = null;
+          try {
+            const res = await fetch(`/api/v1/games/${game.id}/saves/gameState`);
+            if (res.ok) {
+              const data = await res.json();
+              cloudRevision = data.revision;
+              cloudState = data;
+            }
+          } catch (e) {
+            console.warn("Handshake cloud save check failed", e);
+          }
+
+          // Get logged in user if possible
+          let playerId = 'guest';
+          try {
+            const res = await fetch('/api/v1/auth/me');
+            if (res.ok) {
+              const user = await res.json();
+              playerId = user.username;
+            }
+          } catch (e) {}
+
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_INIT_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: {
+              playerId,
+              cloudRevision,
+              cloudState,
+              settings: { locale: 'en-US', muted: false, volume: 1.0, theme: 'console-dark' }
+            }
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_SAVE') {
+          const res = await fetch(`/api/v1/games/${game.id}/saves/${payload.slot}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            const ack = await res.json();
+            contentWindow.postMessage({
+              id,
+              type: 'WGCP_SAVE_ACK',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              payload: { revision: ack.revision }
+            }, expectedGameOrigin);
+          } else {
+            const errData = await res.json();
+            contentWindow.postMessage({
+              id,
+              type: 'WGCP_SAVE_NACK',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              error: errData
+            }, expectedGameOrigin);
+          }
+        }
+        else if (type === 'WGCP_DELETE') {
+          await fetch(`/api/v1/games/${game.id}/saves/${payload.slot}`, { method: 'DELETE' });
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_DELETE_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: { success: true }
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_ACHIEVEMENT_UNLOCK') {
+          const res = await fetch(`/api/v1/games/${game.id}/achievements/${payload.achievementId}/unlock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ txId: payload.txId })
+          });
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_ACHIEVEMENT_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_ACHIEVEMENT_INCREMENT') {
+          const res = await fetch(`/api/v1/games/${game.id}/achievements/${payload.achievementId}/increment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ txId: payload.txId, step: payload.step })
+          });
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_ACHIEVEMENT_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_ACHIEVEMENT_PROGRESS') {
+          const res = await fetch(`/api/v1/games/${game.id}/achievements`);
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_ACHIEVEMENT_PROGRESS_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_LEADERBOARD_TOKEN') {
+          const res = await fetch(`/api/v1/games/${game.id}/leaderboards/${payload.leaderboardId}/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionLengthMs: payload.sessionLengthMs,
+              gameActivityScore: payload.gameActivityScore
+            })
+          });
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_LEADERBOARD_TOKEN_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_LEADERBOARD_SUBMIT') {
+          const res = await fetch(`/api/v1/games/${game.id}/leaderboards/${payload.leaderboardId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: payload.token,
+              score: payload.score,
+              metadata: payload.metadata
+            })
+          });
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_LEADERBOARD_SUBMIT_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_LEADERBOARD_GET_SCORES') {
+          const res = await fetch(`/api/v1/games/${game.id}/leaderboards/${payload.leaderboardId}?limit=${payload.query?.limit || 10}&offset=${payload.query?.offset || 0}`);
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_LEADERBOARD_GET_SCORES_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_LEADERBOARD_PERSONAL_BEST') {
+          const res = await fetch(`/api/v1/games/${game.id}/leaderboards/${payload.leaderboardId}`);
+          const data = await res.json();
+          const me = data.find((entry: any) => entry.isMe);
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_LEADERBOARD_PERSONAL_BEST_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: me ? { leaderboardId: payload.leaderboardId, score: me.score, achievedAt: me.timestamp, metadata: me.metadata } : null
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_STATS') {
+          const res = await fetch(`/api/v1/games/${game.id}/stats`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            contentWindow.postMessage({
+              id,
+              type: 'WGCP_STATS_ACK',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              payload: { success: true }
+            }, expectedGameOrigin);
+          }
+        }
+        else if (type === 'WGCP_PROGRESSION_ADD_XP') {
+          const res = await fetch(`/api/v1/games/${game.id}/progression/addXP`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: payload.amount })
+          });
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_PROGRESSION_ADD_XP_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_PROGRESSION_GET') {
+          const res = await fetch(`/api/v1/games/${game.id}/progression`);
+          const data = await res.json();
+          contentWindow.postMessage({
+            id,
+            type: 'WGCP_PROGRESSION_GET_ACK',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: data
+          }, expectedGameOrigin);
+        }
+        else if (type === 'WGCP_CONFLICT_TRIGGER') {
+          setPendingConflict({
+            localState: payload.localState,
+            cloudState: payload.cloudState,
+            eventSource: event.source as Window,
+            eventOrigin: event.origin
+          });
+        }
+        else if (type === 'WGCP_REQUEST_PERMISSION') {
+          const { permission } = payload || {};
+          
+          if (permission === 'persistent-storage') {
+            if (navigator.storage && navigator.storage.persisted) {
+              navigator.storage.persisted().then((isPersisted) => {
+                if (isPersisted) {
+                  contentWindow.postMessage(
+                    {
+                      id,
+                      type: 'WGCP_REQUEST_PERMISSION_ACK',
+                      source: 'WGCP_PORTAL',
+                      version: '2.0.0',
+                      payload: { permission: 'persistent-storage', granted: true }
+                    },
+                    expectedGameOrigin
+                  );
+                } else {
+                  setPendingPermission({
                     id,
-                    type: 'WGCP_REQUEST_PERMISSION_ACK',
-                    source: 'WGCP_PORTAL',
-                    version: '2.0.0',
-                    payload: { permission: 'persistent-storage', granted: true }
-                  },
-                  expectedGameOrigin
-                );
-              } else {
+                    permission,
+                    expectedGameOrigin
+                  });
+                }
+              }).catch(() => {
                 setPendingPermission({
                   id,
                   permission,
                   expectedGameOrigin
                 });
-              }
-            }).catch(() => {
+              });
+            } else {
               setPendingPermission({
                 id,
                 permission,
                 expectedGameOrigin
               });
-            });
+            }
           } else {
-            setPendingPermission({
-              id,
-              permission,
-              expectedGameOrigin
-            });
-          }
-        } else {
-          // Auto-deny unsupported permissions
-          iframe.contentWindow.postMessage(
-            {
-              id,
-              type: 'WGCP_REQUEST_PERMISSION_ACK',
-              source: 'WGCP_PORTAL',
-              version: '2.0.0',
-              payload: {
-                permission,
-                granted: false,
+            // Auto-deny unsupported permissions
+            contentWindow.postMessage(
+              {
+                id,
+                type: 'WGCP_REQUEST_PERMISSION_ACK',
+                source: 'WGCP_PORTAL',
+                version: '2.0.0',
+                payload: {
+                  permission,
+                  granted: false,
+                },
               },
-            },
-            expectedGameOrigin
-          );
-        }
-      } else if (type === 'WGCP_TOGGLE_MENU') {
-        setIsOverlayOpen((prev) => {
-          const nextVal = !prev;
-          if (!nextVal) {
-            scheduleAsyncFocus();
+              expectedGameOrigin
+            );
           }
-          return nextVal;
-        });
+        } else if (type === 'WGCP_TOGGLE_MENU') {
+          setIsOverlayOpen((prev) => {
+            const nextVal = !prev;
+            if (!nextVal) {
+              scheduleAsyncFocus();
+            }
+            return nextVal;
+          });
+        }
+      } catch (err) {
+        console.error("Error processing SDK message in portal:", err);
       }
     };
 
@@ -373,6 +607,41 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
           permission={pendingPermission.permission}
           onAllow={() => handlePermissionDecision(true)}
           onDeny={() => handlePermissionDecision(false)}
+        />
+      )}
+
+      {/* Conflict Resolution Overlay */}
+      {pendingConflict && (
+        <ConflictResolutionOverlay
+          game={game}
+          localState={pendingConflict.localState}
+          cloudState={pendingConflict.cloudState}
+          onSelect={async (choice) => {
+            let serverState = null;
+            if (choice === 'CLOUD') {
+              try {
+                const res = await fetch(`/api/v1/games/${game.id}/saves/gameState`);
+                if (res.ok) {
+                  serverState = await res.json();
+                }
+              } catch (e) {
+                console.error("Failed to fetch server state for resolution:", e);
+              }
+            }
+
+            pendingConflict.eventSource.postMessage({
+              type: 'WGCP_CONFLICT_RESOLUTION',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              payload: {
+                choice,
+                serverState
+              }
+            }, pendingConflict.eventOrigin);
+
+            setPendingConflict(null);
+            scheduleAsyncFocus();
+          }}
         />
       )}
     </div>
