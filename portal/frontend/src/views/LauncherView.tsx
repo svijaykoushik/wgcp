@@ -157,11 +157,41 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
         const { permission } = payload || {};
         
         if (permission === 'persistent-storage') {
-          setPendingPermission({
-            id,
-            permission,
-            expectedGameOrigin
-          });
+          const contentWindow = iframe.contentWindow;
+          if (navigator.storage && navigator.storage.persisted) {
+            navigator.storage.persisted().then((isPersisted) => {
+              if (isPersisted) {
+                contentWindow.postMessage(
+                  {
+                    id,
+                    type: 'WGCP_REQUEST_PERMISSION_ACK',
+                    source: 'WGCP_PORTAL',
+                    version: '2.0.0',
+                    payload: { permission: 'persistent-storage', granted: true }
+                  },
+                  expectedGameOrigin
+                );
+              } else {
+                setPendingPermission({
+                  id,
+                  permission,
+                  expectedGameOrigin
+                });
+              }
+            }).catch(() => {
+              setPendingPermission({
+                id,
+                permission,
+                expectedGameOrigin
+              });
+            });
+          } else {
+            setPendingPermission({
+              id,
+              permission,
+              expectedGameOrigin
+            });
+          }
         } else {
           // Auto-deny unsupported permissions
           iframe.contentWindow.postMessage(

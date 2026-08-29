@@ -364,4 +364,64 @@ describe('Web API Permission Delegation Test Suite', () => {
     expect(mockPersist).not.toHaveBeenCalled();
     expect(postMessageSpy).not.toHaveBeenCalled();
   });
+
+  test('Auto-grants request without modal when storage is already persisted', async () => {
+    const mockPersisted = vi.fn().mockResolvedValue(true);
+    const mockPersist = vi.fn().mockResolvedValue(true);
+    Object.defineProperty(navigator, 'storage', {
+      value: {
+        persisted: mockPersisted,
+        persist: mockPersist,
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    render(<LauncherView game={mockGame} onExit={mockExit} />);
+
+    await waitFor(() => {
+      expect(document.querySelector('iframe')).toBeInTheDocument();
+    });
+
+    const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+    if (!iframe || !iframe.contentWindow) {
+      throw new Error('Iframe contentWindow not found');
+    }
+
+    const postMessageSpy = vi.spyOn(iframe.contentWindow, 'postMessage');
+
+    const correlationId = '8f3c4d5e-6f7a-4b9c-8d1e-2f3a4b5c6d7f'; // Valid UUIDv4
+    const messageEvent = new MessageEvent('message', {
+      data: {
+        id: correlationId,
+        type: 'WGCP_REQUEST_PERMISSION',
+        source: 'WGCP_SDK',
+        version: '2.0.0',
+        payload: { permission: 'persistent-storage' }
+      },
+      origin: 'http://hextris.localhost',
+    });
+
+    Object.defineProperty(messageEvent, 'source', { value: iframe.contentWindow });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    window.dispatchEvent(messageEvent);
+
+    // Expect the ACK to be returned immediately as granted = true without showing the modal overlay
+    await waitFor(() => {
+      expect(mockPersisted).toHaveBeenCalledTimes(1);
+      expect(mockPersist).not.toHaveBeenCalled();
+      expect(document.querySelector('[aria-label="Permission Request"]')).not.toBeInTheDocument();
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        {
+          id: correlationId,
+          type: 'WGCP_REQUEST_PERMISSION_ACK',
+          source: 'WGCP_PORTAL',
+          version: '2.0.0',
+          payload: { permission: 'persistent-storage', granted: true }
+        },
+        'http://hextris.localhost'
+      );
+    });
+  });
 });
