@@ -18,3 +18,5 @@ This directory houses the structured memory documents for the Web Game Console P
 * [Proposals Index](proposals/) - Subdirectory index of design proposals and RFC specifications.
 * [Findings Index](findings/) - Subdirectory index of code audits, static analyses, and platform reports.
 * [Investigations Index](investigations/) - Subdirectory index of active debugging sessions and issue tracking.
+* [Runbooks Index](runbooks/) - Subdirectory index of operational runbooks, checklists, and integration guides.
+

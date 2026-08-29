@@ -33,6 +33,7 @@ The memory catalog is structured as a single self-contained Knowledge Bundle loc
   decisions/           # Subdirectory for architectural decisions (D-###)
   findings/            # Subdirectory for static findings and analysis (F-###)
   investigations/      # Subdirectory for active investigations and bugs (I-###)
+  runbooks/            # Subdirectory for operational procedures and game integration checklists (R-###)
 ```
 
 ---
@@ -48,6 +49,7 @@ Every markdown concept file in this bundle must declare one of the following `ty
 5. **`Decision`**: For architectural design choices and consensus records. Uses ID format `D-###-<slug>.md`.
 6. **`Finding`**: For codebase analysis findings, audits, or performance metrics. Uses ID format `F-###-<slug>.md`.
 7. **`Investigation`**: For debugging tracks, diagnostics, and issue tracking. Uses ID format `I-###-<slug>.md`.
+8. **`Runbook`**: For step-by-step developer checklists, operational procedures, or game integration guides. Uses ID format `R-###-<slug>.md`.
 
 ---
 
@@ -157,4 +159,16 @@ All `generated.by` and `verified.by` metadata fields must adhere to the OKF Acto
 * **Codebase & Repository Links**: When linking to source code, scripts, or assets outside of the memory bundle (e.g., inside the `games/` or `platform/` folders), use **Repository-Relative Paths** starting with `/` (e.g., `[`storage.js`](/games/BrowserQuest/client/js/storage.js)`). The workspace/repository root is mapped to `/`.
 * **Portability Constraint**: Hardcoded environment-specific absolute filesystem paths or local protocols (such as `file:///home/...` or `file:///C:/...`) MUST NOT be used anywhere in the catalog.
 
+---
+
+## 12. Runbook Guidelines
+
+Runbooks record step-by-step developer checklists, packaging instructions, or operational procedures. They must follow these rules:
+* **Naming**: Saved under `runbooks/R-###-<title_slug>.md` where `###` is a sequential 3-digit padded number.
+* **Frontmatter Metadata**:
+  * `type: Runbook` (Required)
+  * `runbook_id`: String (e.g., `R-001`)
+  * `status`: Must be one of `active` or `draft`.
+
 [^okf-spec]: Open Knowledge Format Specification (v0.2)
+

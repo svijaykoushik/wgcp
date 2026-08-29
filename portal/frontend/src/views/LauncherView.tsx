@@ -29,6 +29,11 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const focusTimersRef = useRef<number[]>([]);
+  const isOverlayOpenRef = useRef(isOverlayOpen);
+
+  useEffect(() => {
+    isOverlayOpenRef.current = isOverlayOpen;
+  }, [isOverlayOpen]);
 
   // Resolve game endpoint URL
   const resolveGameUrl = (gameItem: Game) => {
@@ -52,7 +57,7 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
 
   const focusIframe = () => {
     const iframe = iframeRef.current;
-    if (!iframe || isOverlayOpen) return;
+    if (!iframe || isOverlayOpenRef.current) return;
     try {
       iframe.focus();
       if (iframe.contentWindow) {
@@ -208,6 +213,14 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
             expectedGameOrigin
           );
         }
+      } else if (type === 'WGCP_TOGGLE_MENU') {
+        setIsOverlayOpen((prev) => {
+          const nextVal = !prev;
+          if (!nextVal) {
+            scheduleAsyncFocus();
+          }
+          return nextVal;
+        });
       }
     };
 

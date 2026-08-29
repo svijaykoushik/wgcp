@@ -1,5 +1,11 @@
 # Directory Update Log
 
+## 2026-08-29
+* **Creation**: Added game integration runbook [`R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) and initialized the runbooks subdirectory with its own index and update logs.
+* **Update**: Updated specification [`memory_spec.md`](/memory_spec.md) to define the new `Runbook` concept type and `runbooks/` folder.
+* **Creation**: Added investigation report [`I-010-viewport-escape-regression.md`](/investigations/I-010-viewport-escape-regression.md) detailing the diagnostics and root causes of the viewport-first launch Escape key regression.
+
+
 ## 2026-08-28
 * **Creation**: Added decision [`D-005-storage-permission-delegation.md`](/decisions/D-005-storage-permission-delegation.md) implementing interactive storage permission delegation for cross-origin game iframes.
 * **Creation**: Added investigation report [`I-009-supertux-persistent-storage-issue.md`](/investigations/I-009-supertux-persistent-storage-issue.md) detailing the diagnostics and root causes for the SuperTux persistent storage prompt request failure.

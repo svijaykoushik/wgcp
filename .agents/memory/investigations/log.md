@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-08-29
+* **Creation**: Added [`I-010-viewport-escape-regression.md`](/investigations/I-010-viewport-escape-regression.md) detailing diagnostics and root causes of the viewport-first launch Escape key regression.
+
 ## 2026-08-28
 * **Creation**: Added [`I-009-supertux-persistent-storage-issue.md`](/investigations/I-009-supertux-persistent-storage-issue.md) detailing the diagnostics and root causes for the SuperTux persistent storage prompt request failure.
 

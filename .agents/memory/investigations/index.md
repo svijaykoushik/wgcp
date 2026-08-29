@@ -13,6 +13,4 @@ This directory holds diagnostics, debugging trails, and active issue investigati
 * [Proposal Security, Race-Condition, and Queue Audit](I-007-proposal-security-and-queue-audit.md) - Advanced audit focusing on postMessage origin hijacking, pending promise stacking during conflict overlays, queue sharing, and session migration race conditions.
 * [Proposals Iterative Scrutiny](I-008-proposals-iterative-scrutiny.md) - Three-round iterative audit examining the Emscripten FS bridge, binary data memory neutralization, client-side telemetry limits, and local vs. remote sync queueing.
 * [SuperTux Persistent Storage Request Failure](I-009-supertux-persistent-storage-issue.md) - Diagnostic report into why the persistent storage permission prompt is not presented to the user during SuperTux gameplay.
-
-
-
+* [Viewport-First Launch Escape Key Regression](I-010-viewport-escape-regression.md) - Diagnostic report into why the Escape key fails to open the system menu overlay on initial game launch under the viewport-first windowed model.

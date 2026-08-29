@@ -61,7 +61,8 @@ const ALLOWED_RPC_TYPES = new Set([
   'WGCP_MIGRATE',
   'WGCP_MIGRATION_ACK',
   'WGCP_REQUEST_PERMISSION',
-  'WGCP_REQUEST_PERMISSION_ACK'
+  'WGCP_REQUEST_PERMISSION_ACK',
+  'WGCP_TOGGLE_MENU'
 ]);
 
 export function validateRPCMessageEnvelope(data: unknown, expectedSource: 'WGCP_SDK' | 'WGCP_PORTAL'): boolean {
