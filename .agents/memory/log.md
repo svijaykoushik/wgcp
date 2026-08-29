@@ -1,6 +1,10 @@
 # Directory Update Log
 
 ## 2026-08-29
+* **Integration**: Integrated local-storage testbed games (**2048**, **Hextris**, and **A Dark Room**) and RequireJS/WebSocket-based MMORPG (**BrowserQuest**) with the standalone WGCP SDK.
+  * Configured asynchronous save rehydration on game start before bootstrap/application instantiation.
+  * Overrode and intercepted local storage operations to seamlessly pipe save sync states back to the platform cloud storage database.
+  * Connected BrowserQuest's client telemetry tracking directly to the P-003 telemetry APIs, synchronization metrics, and leaderboards, including awarding progression XP for kills and unlocking achievements.
 * **Feasibility**: Assessed and successfully folded capturing-phase "Escape key forwarding" logic into the core SDK initialization (`WGCP.init`), automatically forwarding `WGCP_TOGGLE_MENU` events to the parent portal wrapper.
 * **Update**: Decoupled the built SDK from the portal frontend container entirely, removing `portal/frontend/public/wgcp-sdk.js` and updating `/sdk/package.json` to copy assets solely to the Caddy-mounted gateway path.
 * **Refactoring**: Standardized and optimized UUIDv4 generation across all SDK files (`index.ts`, `storage/index.ts`, `stats/index.ts`, `services/index.ts`) to query browser `crypto.randomUUID` and `crypto.getRandomValues` first, before falling back to custom pseudo-random math generators. Replaced backend token generation with native `node:crypto` library.
