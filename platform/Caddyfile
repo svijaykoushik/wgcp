@@ -43,8 +43,3 @@ http://hextris.localhost {
 http://supertux.localhost {
     reverse_proxy game-supertux:80
 }
-
-http://wgcp-sdk.localhost {
-    root * /srv/sdk
-    file_server
-}
