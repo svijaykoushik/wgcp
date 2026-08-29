@@ -20,7 +20,7 @@ test.describe('Portal Web API Permission Delegation E2E Test', () => {
     await context.addInitScript(() => {
       // Apply only to the supertux game iframe
       if (window.location.hostname === 'supertux.localhost') {
-        const correlationId = 'e2e-persist-storage-uuid-v4';
+        const correlationId = 'c2b489a2-97b7-4a41-b844-3d077d71be21';
         
         Object.defineProperty(navigator, 'storage', {
           value: {
@@ -96,14 +96,25 @@ test.describe('Portal Web API Permission Delegation E2E Test', () => {
     const playSupertuxBtn = page.locator('[data-focusable="play-supertux"]');
     await playSupertuxBtn.click();
 
-    // 8. Expect the game to be loaded in iframe and go fullscreen
+    // 8. Expect the game to be loaded in iframe
     // Wait for the iframe to load
     const iframeElement = page.locator('iframe');
     await expect(iframeElement).toBeVisible();
 
-    // Verify it has the correct sandbox and allow attributes
-    await expect(iframeElement).toHaveAttribute('src', 'http://supertux.localhost');
+    // Verify it has the correct allow attributes and matching src
+    await expect(iframeElement).toHaveAttribute('src', /supertux\.localhost/);
     await expect(iframeElement).toHaveAttribute('allow', /persistent-storage/);
+
+    // Verify the permission request modal is displayed in the parent portal
+    const permissionModal = page.locator('[aria-label="Permission Request"]');
+    await expect(permissionModal).toBeVisible();
+
+    // Click "Allow" on the portal's permission modal
+    const allowBtn = permissionModal.locator('button:has-text("Allow")');
+    await allowBtn.click();
+
+    // Verify the permission modal is closed
+    await expect(permissionModal).not.toBeVisible();
 
     // Wait for the iframe to load its content
     const frame = page.frame({ url: /supertux\.localhost/ });

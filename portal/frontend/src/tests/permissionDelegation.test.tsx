@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import LauncherView from '../views/LauncherView';
 import { Game } from '../types';
@@ -110,6 +110,18 @@ describe('Web API Permission Delegation Test Suite', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     window.dispatchEvent(messageEvent);
 
+    // Wait for the modal/overlay to appear, then click Allow
+    await waitFor(() => {
+      expect(document.querySelector('[aria-label="Permission Request"]')).toBeInTheDocument();
+    });
+    const buttons = document.querySelectorAll('button');
+    const allowButton = Array.from(buttons).find(b => b.textContent?.includes('Allow'));
+    if (allowButton) {
+      fireEvent.click(allowButton);
+    } else {
+      throw new Error('Allow button not found');
+    }
+
     // 4. Expect portal to request the browser for permission and reply back with granted = true
     await waitFor(() => {
       expect(mockPersist).toHaveBeenCalledTimes(1);
@@ -167,8 +179,87 @@ describe('Web API Permission Delegation Test Suite', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     window.dispatchEvent(messageEvent);
 
+    // Wait for the modal/overlay to appear, then click Allow
+    await waitFor(() => {
+      expect(document.querySelector('[aria-label="Permission Request"]')).toBeInTheDocument();
+    });
+    const buttons = document.querySelectorAll('button');
+    const allowButton = Array.from(buttons).find(b => b.textContent?.includes('Allow'));
+    if (allowButton) {
+      fireEvent.click(allowButton);
+    } else {
+      throw new Error('Allow button not found');
+    }
+
     await waitFor(() => {
       expect(mockPersist).toHaveBeenCalledTimes(1);
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        {
+          id: correlationId,
+          type: 'WGCP_REQUEST_PERMISSION_ACK',
+          source: 'WGCP_PORTAL',
+          version: '2.0.0',
+          payload: { permission: 'persistent-storage', granted: false }
+        },
+        'http://hextris.localhost'
+      );
+    });
+  });
+
+  test('Returns granted = false without querying browser when user denies request', async () => {
+    const mockPersist = vi.fn().mockResolvedValue(true);
+    Object.defineProperty(navigator, 'storage', {
+      value: {
+        persist: mockPersist,
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    render(<LauncherView game={mockGame} onExit={mockExit} />);
+
+    await waitFor(() => {
+      expect(document.querySelector('iframe')).toBeInTheDocument();
+    });
+
+    const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+    if (!iframe || !iframe.contentWindow) {
+      throw new Error('Iframe contentWindow not found');
+    }
+
+    const postMessageSpy = vi.spyOn(iframe.contentWindow, 'postMessage');
+
+    const correlationId = '2a3c4d5e-6f7a-4b9c-8d1e-2f3a4b5c6d7e'; // Valid UUIDv4
+    const messageEvent = new MessageEvent('message', {
+      data: {
+        id: correlationId,
+        type: 'WGCP_REQUEST_PERMISSION',
+        source: 'WGCP_SDK',
+        version: '2.0.0',
+        payload: { permission: 'persistent-storage' }
+      },
+      origin: 'http://hextris.localhost',
+    });
+
+    Object.defineProperty(messageEvent, 'source', { value: iframe.contentWindow });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    window.dispatchEvent(messageEvent);
+
+    // Wait for the modal/overlay to appear, then click Deny
+    await waitFor(() => {
+      expect(document.querySelector('[aria-label="Permission Request"]')).toBeInTheDocument();
+    });
+    const buttons = document.querySelectorAll('button');
+    const denyButton = Array.from(buttons).find(b => b.textContent?.includes('Deny'));
+    if (denyButton) {
+      fireEvent.click(denyButton);
+    } else {
+      throw new Error('Deny button not found');
+    }
+
+    await waitFor(() => {
+      expect(mockPersist).not.toHaveBeenCalled();
       expect(postMessageSpy).toHaveBeenCalledWith(
         {
           id: correlationId,

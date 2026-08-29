@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-08-28
+* **Creation**: Added [`I-009-supertux-persistent-storage-issue.md`](/investigations/I-009-supertux-persistent-storage-issue.md) detailing the diagnostics and root causes for the SuperTux persistent storage prompt request failure.
+
 ## 2026-08-21
 * **Creation**: Added [`I-008-proposals-iterative-scrutiny.md`](/investigations/I-008-proposals-iterative-scrutiny.md) detailing a three-round iterative audit of the revised P-002 and P-003 specifications.
 * **Creation**: Added [`I-007-proposal-security-and-queue-audit.md`](/investigations/I-007-proposal-security-and-queue-audit.md) detailing an advanced audit focusing on postMessage origin hijacking, pending promise stacking, queue sharing, and session migration race conditions.

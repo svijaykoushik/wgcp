@@ -37,6 +37,16 @@ test.describe('Portal Game Launch Viewport and Overflow E2E Test', () => {
     const iframeElement = page.locator('iframe');
     await expect(iframeElement).toBeVisible();
 
+    // Dismiss permission request modal if it appears
+    const permissionModal = page.locator('[aria-label="Permission Request"]');
+    try {
+      await permissionModal.waitFor({ state: 'visible', timeout: 5000 });
+      await permissionModal.locator('button:has-text("Allow")').click();
+      await expect(permissionModal).not.toBeVisible();
+    } catch {
+      // Modal did not appear or was already handled
+    }
+
     // 7. Verify the iframe occupies the exact size of the viewport (no bounds overflow)
     const viewportSize = page.viewportSize();
     expect(viewportSize).not.toBeNull();
@@ -72,7 +82,7 @@ test.describe('Portal Game Launch Viewport and Overflow E2E Test', () => {
     expect(overflow.scrollWidth).toBe(overflow.clientWidth);
 
     // 9. Verify the iframe parent container also has no layout overflow
-    const parentContainer = page.locator('div.fixed.inset-0');
+    const parentContainer = page.locator('div.fixed.inset-0.w-screen');
     const parentOverflow = await parentContainer.evaluate((el) => {
       return {
         scrollHeight: el.scrollHeight,

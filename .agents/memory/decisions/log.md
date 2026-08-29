@@ -1,6 +1,7 @@
 # Decisions Update Log
 
 ## 2026-08-28
+* **Creation**: Added decision [`D-005-storage-permission-delegation.md`](file://./D-005-storage-permission-delegation.md) implementing interactive storage permission delegation for cross-origin game iframes.
 * **Creation**: Added decision [`D-004-game-launch-refactor.md`](file://./D-004-game-launch-refactor.md) for viewport-first default game launch refactoring.
 
 ## 2026-08-15

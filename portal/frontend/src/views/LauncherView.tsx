@@ -2,11 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Game } from '../types';
 import { SystemMenuOverlay } from '../components/SystemMenuOverlay';
 import { LaunchSequence } from '../components/LaunchSequence';
+import { PermissionRequestOverlay } from '../components/PermissionRequestOverlay';
 import { verifyPostMessageOrigin, validateRPCMessageEnvelope } from '../utils/security';
 
 interface LauncherViewProps {
   game: Game;
   onExit: () => void;
+}
+
+interface PendingPermissionRequest {
+  id: string;
+  permission: string;
+  expectedGameOrigin: string;
 }
 
 export function LauncherView({ game, onExit }: LauncherViewProps) {
@@ -18,15 +25,29 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
       document.fullscreenElement || (document as any).webkitFullscreenElement
     )
   );
+  const [pendingPermission, setPendingPermission] = useState<PendingPermissionRequest | null>(null);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const focusTimersRef = useRef<number[]>([]);
 
   // Resolve game endpoint URL
   const resolveGameUrl = (gameItem: Game) => {
-    if (gameItem.url) return gameItem.url;
-    if (gameItem.hosting?.hostname) return `http://${gameItem.hosting.hostname}`;
-    return `http://${gameItem.id}.localhost`;
+    let baseUrl = '';
+    if (gameItem.url) {
+      baseUrl = gameItem.url;
+    } else if (gameItem.hosting?.hostname) {
+      baseUrl = `http://${gameItem.hosting.hostname}`;
+    } else {
+      baseUrl = `http://${gameItem.id}.localhost`;
+    }
+
+    try {
+      const urlObj = new URL(baseUrl);
+      urlObj.searchParams.set('wgcp_origin', window.location.origin);
+      return urlObj.toString();
+    } catch {
+      return baseUrl;
+    }
   };
 
   const focusIframe = () => {
@@ -134,32 +155,29 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
       // Handle permission request
       if (type === 'WGCP_REQUEST_PERMISSION') {
         const { permission } = payload || {};
-        let granted = false;
         
         if (permission === 'persistent-storage') {
-          try {
-            if (navigator.storage && navigator.storage.persist) {
-              granted = await navigator.storage.persist();
-            }
-          } catch (err) {
-            console.warn('Error requesting persistent storage permission:', err);
-          }
-        }
-
-        // Post the ACK back to the game iframe using explicit canonical origin
-        iframe.contentWindow.postMessage(
-          {
+          setPendingPermission({
             id,
-            type: 'WGCP_REQUEST_PERMISSION_ACK',
-            source: 'WGCP_PORTAL',
-            version: '2.0.0',
-            payload: {
-              permission,
-              granted,
+            permission,
+            expectedGameOrigin
+          });
+        } else {
+          // Auto-deny unsupported permissions
+          iframe.contentWindow.postMessage(
+            {
+              id,
+              type: 'WGCP_REQUEST_PERMISSION_ACK',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              payload: {
+                permission,
+                granted: false,
+              },
             },
-          },
-          expectedGameOrigin
-        );
+            expectedGameOrigin
+          );
+        }
       }
     };
 
@@ -168,6 +186,40 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
       window.removeEventListener('message', handleMessage);
     };
   }, [isLaunching, game]);
+
+  const handlePermissionDecision = async (granted: boolean) => {
+    if (!pendingPermission) return;
+    const { id, permission, expectedGameOrigin } = pendingPermission;
+    setPendingPermission(null);
+
+    let finalGranted = false;
+    if (granted && permission === 'persistent-storage') {
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          finalGranted = await navigator.storage.persist();
+        }
+      } catch (err) {
+        console.warn('Error requesting persistent storage permission:', err);
+      }
+    }
+
+    const iframe = iframeRef.current;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage(
+        {
+          id,
+          type: 'WGCP_REQUEST_PERMISSION_ACK',
+          source: 'WGCP_PORTAL',
+          version: '2.0.0',
+          payload: {
+            permission,
+            granted: finalGranted,
+          },
+        },
+        expectedGameOrigin
+      );
+    }
+  };
 
   const resumeGame = () => {
     setIsOverlayOpen(false);
@@ -268,6 +320,16 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
           onExit={handleExitToLibrary}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
+        />
+      )}
+
+      {/* Permission Request Overlay */}
+      {pendingPermission && (
+        <PermissionRequestOverlay
+          game={game}
+          permission={pendingPermission.permission}
+          onAllow={() => handlePermissionDecision(true)}
+          onDeny={() => handlePermissionDecision(false)}
         />
       )}
     </div>

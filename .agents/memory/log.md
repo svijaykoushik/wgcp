@@ -1,6 +1,8 @@
 # Directory Update Log
 
 ## 2026-08-28
+* **Creation**: Added decision [`D-005-storage-permission-delegation.md`](/decisions/D-005-storage-permission-delegation.md) implementing interactive storage permission delegation for cross-origin game iframes.
+* **Creation**: Added investigation report [`I-009-supertux-persistent-storage-issue.md`](/investigations/I-009-supertux-persistent-storage-issue.md) detailing the diagnostics and root causes for the SuperTux persistent storage prompt request failure.
 * **Update**: Updated status of proposal [`P-004-game-launch-refactor.md`](/proposals/P-004-game-launch-refactor.md) to `accepted`.
 * **Creation**: Added decision [`D-004-game-launch-refactor.md`](/decisions/D-004-game-launch-refactor.md) committing the choice of default viewport game launches and paused settings fullscreen toggle.
 
