@@ -1,5 +1,12 @@
 # Directory Update Log
 
+## 2026-08-31
+* **Creation**: Added decision [`D-006-epoch-timestamp-and-sdk-invariants.md`](/decisions/D-006-epoch-timestamp-and-sdk-invariants.md) establishing schema 64-bit integer timestamp typing (`bigint`), SDK feature centralization, Docker container rebuild lifecycles, and E2E test database state isolation.
+* **Testing & Verification**: Created and expanded the comprehensive Playwright E2E integration test suite (`portal/frontend/e2e/sdk-integrations.spec.ts`) validating save rehydration, statistics updates, achievements unlocks, and Escape forwarding across 2048, Hextris, A Dark Room, and BrowserQuest.
+* **Fix**: Resolved Postgres 32-bit integer overflow exception by migrating timestamp columns across saves, achievements, stats, leaderboards, and progression tables to `bigint("...", { mode: "number" })`.
+* **Fix**: Updated backend Express server timestamp allocations to consistently write millisecond-precision epochs.
+* **Fix**: Added missing `DELETE /api/v1/games/:gameId/saves/:slot` endpoint in `portal/backend/src/server.ts` to allow cloud save deletions by both the SDK and automated test cleanups.
+
 ## 2026-08-29
 * **Integration**: Integrated local-storage testbed games (**2048**, **Hextris**, and **A Dark Room**) and RequireJS/WebSocket-based MMORPG (**BrowserQuest**) with the standalone WGCP SDK.
   * Configured asynchronous save rehydration on game start before bootstrap/application instantiation.
