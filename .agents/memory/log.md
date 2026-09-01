@@ -1,5 +1,11 @@
 # Directory Update Log
 
+## 2026-09-01
+* **Creation**: Added decision [`D-007-cloud-fallback-and-local-save-migration.md`](/decisions/D-007-cloud-fallback-and-local-save-migration.md) implementing transparent cloud fallback state hydration, legacy local save migration, and game container rebuild invariants.
+* **Implementation**: Wired `WGCP_LOAD` and `WGCP_STATS_GET` RPC query paths through `LauncherView.tsx` and the standalone SDK (`sdk/src/storage/index.ts`, `sdk/src/stats/index.ts`) to ensure full cloud state rehydration on local cache miss.
+* **Migration**: Updated BrowserQuest, 2048, Hextris, and A Dark Room to auto-migrate pre-existing local storage data to PostgreSQL on initial SDK boot.
+* **Fix**: Hooked direct property storage mutations (`localStorage.data = ...`) in BrowserQuest `storage.js` directly to `WGCP.storage.save('data', ...)`.
+
 ## 2026-08-31
 * **Creation**: Added decision [`D-006-epoch-timestamp-and-sdk-invariants.md`](/decisions/D-006-epoch-timestamp-and-sdk-invariants.md) establishing schema 64-bit integer timestamp typing (`bigint`), SDK feature centralization, Docker container rebuild lifecycles, and E2E test database state isolation.
 * **Testing & Verification**: Created and expanded the comprehensive Playwright E2E integration test suite (`portal/frontend/e2e/sdk-integrations.spec.ts`) validating save rehydration, statistics updates, achievements unlocks, and Escape forwarding across 2048, Hextris, A Dark Room, and BrowserQuest.

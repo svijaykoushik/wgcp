@@ -1,5 +1,8 @@
 # Decisions Update Log
 
+## 2026-09-01
+* **Creation**: Added decision [`D-007-cloud-fallback-and-local-save-migration.md`](file://./D-007-cloud-fallback-and-local-save-migration.md) implementing transparent cloud fallback state hydration, legacy local save migration, and game container rebuild invariants.
+
 ## 2026-08-31
 * **Creation**: Added decision [`D-006-epoch-timestamp-and-sdk-invariants.md`](file://./D-006-epoch-timestamp-and-sdk-invariants.md) establishing schema 64-bit integer timestamp constraints, SDK feature centralization, and test isolation.
 
