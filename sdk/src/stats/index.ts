@@ -18,7 +18,7 @@ let flushTimeout: any = null;
 // Opens and rehydrates stats queue cache from IndexedDB on startup (P-003 §3.6.3)
 export function initStats(gid: string): Promise<void> {
   gameId = gid;
-  return new Promise((resolve) => {
+  return new Promise<void>((resolve) => {
     // We can open the IndexedDB stores to retrieve cache and queue
     const request = indexedDB.open(`wgcp_storage_${gameId}`);
     request.onsuccess = () => {
@@ -43,6 +43,27 @@ export function initStats(gid: string): Promise<void> {
       // Graceful fallback to in-memory only if DB fails
       resolve();
     };
+  }).then(async () => {
+    // Fetch latest cloud stats from portal to populate cache on fresh session
+    try {
+      const cloudStats: any = await sendRPCMessage('WGCP_STATS_GET', {});
+      if (Array.isArray(cloudStats)) {
+        const request = indexedDB.open(`wgcp_storage_${gameId}`);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('stats_cache', 'readwrite');
+          const store = tx.objectStore('stats_cache');
+          cloudStats.forEach((st: any) => {
+            if (!syncedStatsCache.has(st.statId) || syncedStatsCache.get(st.statId) === 0) {
+              syncedStatsCache.set(st.statId, st.value);
+              store.put({ statId: st.statId, syncedValue: st.value, lastSyncedAt: st.updatedAt || Date.now() });
+            }
+          });
+        };
+      }
+    } catch (e) {
+      // Ignore network errors on init
+    }
   });
 }
 

@@ -244,6 +244,43 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
             }, expectedGameOrigin);
           }
         }
+        else if (type === 'WGCP_LOAD') {
+          try {
+            const res = await fetch(`/api/v1/games/${game.id}/saves/${payload.slot}`);
+            if (res.ok) {
+              const data = await res.json();
+              contentWindow.postMessage({
+                id,
+                type: 'WGCP_LOAD_ACK',
+                source: 'WGCP_PORTAL',
+                version: '2.0.0',
+                payload: {
+                  slot: payload.slot,
+                  payload: data.payload,
+                  checksum: data.checksum,
+                  revision: data.revision,
+                  updatedAt: data.updatedAt
+                }
+              }, expectedGameOrigin);
+            } else {
+              contentWindow.postMessage({
+                id,
+                type: 'WGCP_LOAD_ACK',
+                source: 'WGCP_PORTAL',
+                version: '2.0.0',
+                payload: null
+              }, expectedGameOrigin);
+            }
+          } catch (e) {
+            contentWindow.postMessage({
+              id,
+              type: 'WGCP_LOAD_ACK',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              payload: null
+            }, expectedGameOrigin);
+          }
+        }
         else if (type === 'WGCP_DELETE') {
           await fetch(`/api/v1/games/${game.id}/saves/${payload.slot}`, { method: 'DELETE' });
           contentWindow.postMessage({
@@ -368,6 +405,37 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
               source: 'WGCP_PORTAL',
               version: '2.0.0',
               payload: { success: true }
+            }, expectedGameOrigin);
+          }
+        }
+        else if (type === 'WGCP_STATS_GET') {
+          try {
+            const res = await fetch(`/api/v1/games/${game.id}/stats`);
+            if (res.ok) {
+              const data = await res.json();
+              contentWindow.postMessage({
+                id,
+                type: 'WGCP_STATS_GET_ACK',
+                source: 'WGCP_PORTAL',
+                version: '2.0.0',
+                payload: data
+              }, expectedGameOrigin);
+            } else {
+              contentWindow.postMessage({
+                id,
+                type: 'WGCP_STATS_GET_ACK',
+                source: 'WGCP_PORTAL',
+                version: '2.0.0',
+                payload: []
+              }, expectedGameOrigin);
+            }
+          } catch (e) {
+            contentWindow.postMessage({
+              id,
+              type: 'WGCP_STATS_GET_ACK',
+              source: 'WGCP_PORTAL',
+              version: '2.0.0',
+              payload: []
             }, expectedGameOrigin);
           }
         }

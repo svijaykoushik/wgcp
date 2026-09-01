@@ -86,8 +86,8 @@ test.describe('WGCP SDK integrations E2E Tests', () => {
     return iframeElement;
   }
 
-  test('2048 - Save Rehydration, Leaderboards, and Escape forwarding', async ({ page }) => {
-    test.setTimeout(60000);
+  test('2048 - Save Rehydration across fresh sessions, Leaderboards, and Escape forwarding', async ({ browser, page }) => {
+    test.setTimeout(90000);
     await setupGame(page, '2048', '[data-focusable="play-2048"]');
     const frame = await getFrame(page, /2048\.localhost/);
 
@@ -111,7 +111,36 @@ test.describe('WGCP SDK integrations E2E Tests', () => {
     const response = await savePromise;
     expect(response.status()).toBe(200);
 
-    // 3. Verify Escape Key Menu Toggle (using physical keypress simulation after focusing iframe)
+    // 3. Open a completely fresh browser context (simulating private window / new device)
+    const freshContext = await browser.newContext();
+    const freshPage = await freshContext.newPage();
+
+    try {
+      // Log in and launch 2048 in fresh context
+      await freshPage.goto('http://localhost');
+      await freshPage.waitForSelector('#username, [data-focusable="nav-library"]', { timeout: 15000 });
+      const usernameInput = freshPage.locator('#username');
+      if (await usernameInput.isVisible()) {
+        await usernameInput.fill('testuser');
+        await freshPage.click('button[data-focusable="login-btn"]');
+      }
+
+      await expect(freshPage.locator('[data-focusable="nav-library"]')).toBeVisible({ timeout: 15000 });
+      await freshPage.locator('[data-focusable="nav-library"]').click();
+      await freshPage.locator('[data-focusable="play-2048"]').click();
+
+      const freshFrame = await getFrame(freshPage, /2048\.localhost/);
+
+      // Verify that WGCP.storage.load('bestScore') rehydrates the 2048 high score from the cloud database
+      const loadedScore = await freshFrame.evaluate(async () => {
+        return await window.WGCP.storage.load('bestScore');
+      });
+      expect(Number(loadedScore)).toBe(2048);
+    } finally {
+      await freshContext.close();
+    }
+
+    // 4. Verify Escape Key Menu Toggle (using physical keypress simulation after focusing iframe)
     await frame.evaluate(() => {
       window.focus();
     });

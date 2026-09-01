@@ -275,9 +275,32 @@ export const storageAPI = {
       return Promise.reject({ code: "ERROR_SYNC_PENDING_RESOLUTION", message: "Sync conflict resolving in portal" });
     }
 
-    return getLocalSave(slot).then((record) => {
-      if (!record) return null;
-      return parsedPayloadJSON(record.payload);
+    return getLocalSave(slot).then(async (record) => {
+      if (record) {
+        return parsedPayloadJSON(record.payload);
+      }
+
+      // On local cache miss (e.g. fresh private session or new device), fetch from cloud
+      try {
+        const cloudData: any = await sendRPCMessage('WGCP_LOAD', { slot });
+        if (cloudData && cloudData.payload !== undefined && cloudData.payload !== null) {
+          const cloudRecord: LocalSaveRecord = {
+            slot,
+            payload: typeof cloudData.payload === 'string' ? cloudData.payload : JSON.stringify(cloudData.payload),
+            checksum: cloudData.checksum || '',
+            localRevision: cloudData.revision || 1,
+            lastSyncedRevision: cloudData.revision || 1,
+            dirty: false,
+            updatedAt: cloudData.updatedAt || Date.now()
+          };
+          await writeLocalSave(cloudRecord);
+          return parsedPayloadJSON(cloudRecord.payload);
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch cloud save for slot '${slot}':`, err);
+      }
+
+      return null;
     });
   },
 
