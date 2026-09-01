@@ -23,3 +23,8 @@ http://localhost {
         reverse_proxy portal-frontend:80
     }
 }
+
+http://wgcp-sdk.localhost {
+    root * /srv/sdk
+    file_server
+}

@@ -24,6 +24,11 @@ http://localhost {
     }
 }
 
+http://wgcp-sdk.localhost {
+    root * /srv/sdk
+    file_server
+}
+
 http://browserquest.localhost {
     reverse_proxy browserquest-client:80
 }

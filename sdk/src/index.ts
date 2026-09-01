@@ -252,6 +252,7 @@ if (typeof window !== 'undefined') {
 
 // WGCP Core namespace object
 const WGCP = {
+  getState: getState,
   init: function(options?: { allowedOrigins?: string[] }) {
     if (currentState !== 'UNINITIALIZED') {
       return Promise.resolve();
@@ -397,5 +398,17 @@ const WGCP = {
 if (typeof window !== 'undefined') {
   (window as any).WGCP = WGCP;
 }
+
+export const init = WGCP.init;
+export const storage = WGCP.storage;
+export const stats = WGCP.stats;
+export const identity = WGCP.identity;
+export const achievements = WGCP.achievements;
+export const leaderboards = WGCP.leaderboards;
+export const progression = WGCP.progression;
+export const system = WGCP.system;
+export const time = WGCP.time;
+export const telemetry = WGCP.telemetry;
+
 export default WGCP;
 export { activePlayerId };

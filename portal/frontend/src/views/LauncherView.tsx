@@ -37,6 +37,7 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const focusTimersRef = useRef<number[]>([]);
   const isOverlayOpenRef = useRef(isOverlayOpen);
+  const lastToggleTimeRef = useRef<number>(0);
 
   useEffect(() => {
     isOverlayOpenRef.current = isOverlayOpen;
@@ -94,6 +95,24 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
     scheduleAsyncFocus();
   };
 
+  const resumeGame = () => {
+    lastToggleTimeRef.current = Date.now();
+    setIsOverlayOpen(false);
+    scheduleAsyncFocus();
+  };
+
+  const toggleOverlay = () => {
+    const now = Date.now();
+    if (now - lastToggleTimeRef.current < 350) return;
+    lastToggleTimeRef.current = now;
+
+    if (isOverlayOpenRef.current) {
+      resumeGame();
+    } else {
+      setIsOverlayOpen(true);
+    }
+  };
+
   // Listen for ESC/Start key triggers inside the portal launcher window
   useEffect(() => {
     if (isLaunching) return;
@@ -102,16 +121,12 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        if (isOverlayOpen) {
-          resumeGame();
-        } else {
-          setIsOverlayOpen(true);
-        }
+        toggleOverlay();
       }
     }
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isLaunching, isOverlayOpen]);
+  }, [isLaunching]);
 
   // Handle exit fullscreen to auto-reveal system menu overlay
   useEffect(() => {
@@ -445,13 +460,7 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
             );
           }
         } else if (type === 'WGCP_TOGGLE_MENU') {
-          setIsOverlayOpen((prev) => {
-            const nextVal = !prev;
-            if (!nextVal) {
-              scheduleAsyncFocus();
-            }
-            return nextVal;
-          });
+          toggleOverlay();
         }
       } catch (err) {
         console.error("Error processing SDK message in portal:", err);
@@ -496,11 +505,6 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
         expectedGameOrigin
       );
     }
-  };
-
-  const resumeGame = () => {
-    setIsOverlayOpen(false);
-    scheduleAsyncFocus();
   };
 
   const toggleFullscreen = async () => {

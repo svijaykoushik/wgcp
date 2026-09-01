@@ -282,6 +282,27 @@ app.post("/api/v1/games/:gameId/saves/:slot", async (req, res) => {
   }
 });
 
+app.delete("/api/v1/games/:gameId/saves/:slot", async (req, res) => {
+  const user = await getAuthenticatedUser(req);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const { gameId, slot } = req.params;
+
+  try {
+    await db.delete(saves).where(
+      and(
+        eq(saves.userId, user.id),
+        eq(saves.gameId, gameId),
+        eq(saves.slot, slot)
+      )
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to delete save" });
+  }
+});
+
 // 2. Achievements API
 app.get("/api/v1/games/:gameId/achievements", async (req, res) => {
   const user = await getAuthenticatedUser(req);
@@ -320,7 +341,7 @@ app.post("/api/v1/games/:gameId/achievements/:achievementId/unlock", async (req,
       return res.json({ success: true, alreadyUnlocked: true });
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = Date.now();
     await db.insert(achievements).values({
       userId: user.id,
       gameId,
@@ -379,7 +400,7 @@ app.post("/api/v1/games/:gameId/achievements/:achievementId/increment", async (r
     let currentPercent = existing ? existing.percentComplete : 0;
     let newPercent = Math.min(100, currentPercent + step);
     let unlocked = newPercent >= 100;
-    const now = Math.floor(Date.now() / 1000);
+    const now = Date.now();
 
     await db.insert(achievements).values({
       userId: user.id,
@@ -500,7 +521,7 @@ app.post("/api/v1/games/:gameId/leaderboards/:leaderboardId", async (req, res) =
       )
     });
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = Date.now();
     if (!existing || score > existing.score) {
       await db.insert(leaderboards).values({
         userId: user.id,
@@ -613,7 +634,7 @@ app.post("/api/v1/games/:gameId/stats", async (req, res) => {
       return res.json({ success: true, alreadyProcessed: true });
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = Date.now();
 
     for (const [statId, opData] of Object.entries(operations)) {
       if (opData.op === "SET") {
@@ -731,7 +752,7 @@ app.post("/api/v1/games/:gameId/progression/addXP", async (req, res) => {
       leveledUp = true;
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = Date.now();
     await db.insert(progression).values({
       userId: user.id,
       gameId,
