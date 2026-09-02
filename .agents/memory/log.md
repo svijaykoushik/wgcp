@@ -1,6 +1,7 @@
 # Directory Update Log
 
 ## 2026-09-02
+* **Investigation**: Added [`I-011-supertux-wasm-docker-build-optimization.md`](/investigations/I-011-supertux-wasm-docker-build-optimization.md) diagnosing the monolithic SuperTux Docker build and decoupling the fast HTML/SDK template generation from the 20-minute C++ WASM compilation.
 * **Specification**: Extended [`memory_spec.md`](/memory_spec.md) to define the `Roadmap` concept type and authoring guidelines under OKF v0.2.
 * **Creation**: Added [`roadmap.md`](/roadmap.md) defining the focus-anchored platform architecture roadmap covering completed Phases 1-4, active Phase 5 (WASM & Emscripten Storage Bridge), planned Phase 6, and deferred Phase 7.
 * **Index**: Registered [`roadmap.md`](/roadmap.md) under Core Concepts in [`index.md`](/index.md).

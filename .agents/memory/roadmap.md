@@ -38,6 +38,9 @@ sources:
   - id: i009-supertux-storage
     resource: /investigations/I-009-supertux-persistent-storage-issue.md
     title: SuperTux Persistent Storage Prompt Failure Investigation
+  - id: i011-docker-build
+    resource: /investigations/I-011-supertux-wasm-docker-build-optimization.md
+    title: SuperTux WASM Docker Build Optimization & Decoupling
   - id: r001-runbook
     resource: /runbooks/R-001-game-integration-runbook.md
     title: Game Integration and Packaging Runbook
@@ -57,7 +60,7 @@ This document defines the phased implementation strategy, milestone deliverables
 | **Phase 2** | Console Portal & Launchpad Experience | `COMPLETED` | [P-004](/proposals/P-004-game-launch-refactor.md), [D-004](/decisions/D-004-game-launch-refactor.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | `viewport.spec.ts`, `permission.spec.ts` |
 | **Phase 3** | Standalone Game SDK & Backend Services | `COMPLETED` | [P-002](/proposals/P-002-game-sdk-storage-sync.md), [P-003](/proposals/P-003-game-sdk-services-api.md), [D-006](/decisions/D-006-epoch-timestamp-and-sdk-invariants.md) | Express REST tests, BigInt schema check |
 | **Phase 4** | Game Integrations & Hydration Hardening | `COMPLETED` | [D-007](/decisions/D-007-cloud-fallback-and-local-save-migration.md), [`/runbooks/R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) | `sdk-integrations.spec.ts` (All 4 games pass) |
-| **Phase 5** | WASM & Emscripten Storage Bridge | `ACTIVE` | [I-009](/investigations/I-009-supertux-persistent-storage-issue.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | SuperTux persistent storage E2E |
+| **Phase 5** | WASM & Emscripten Storage Bridge | `ACTIVE` | [I-009](/investigations/I-009-supertux-persistent-storage-issue.md), [I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | SuperTux persistent storage E2E |
 | **Phase 6** | Portal Services UI & Dashboards | `PLANNED` | [P-003](/proposals/P-003-game-sdk-services-api.md) | Playwright UI navigation tests |
 | **Phase 7** | Multiplayer Lobbies & Social Infrastructure | `DEFERRED` | [P-003](/proposals/P-003-game-sdk-services-api.md) Section 2.3 | Deferred scope specification |
 
@@ -70,7 +73,8 @@ This document defines the phased implementation strategy, milestone deliverables
   - Requires interactive storage permission delegation shim adhering to [D-005](/decisions/D-005-storage-permission-delegation.md).
   - Must respect capturing-phase Escape key forwarding and container isolation standards codified in [`R-001`](/runbooks/R-001-game-integration-runbook.md).
 * **Deliverables**:
-  - [ ] Implement Emscripten `IDBFS.syncfs` synchronization interceptor in the standalone SDK (`sdk/src/storage/wasm.ts`).
+  - [x] Implement Emscripten `IDBFS.syncfs` synchronization interceptor in the standalone SDK (`sdk/src/storage/wasm.ts`).
+  - [ ] Decouple SuperTux Dockerfile to bypass redundant C++ WASM compilation during HTML template updates ([I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md)).
   - [ ] Resolve SuperTux persistent storage prompt request failures and wire permission handshake with `LauncherView.tsx` ([I-009](/investigations/I-009-supertux-persistent-storage-issue.md)).
   - [ ] Package and register `games/supertux` using `./platform.sh game add ./games/supertux`.
   - [ ] Add Playwright E2E test verifying WASM level state persistence across browser reload.
@@ -143,4 +147,5 @@ This document defines the phased implementation strategy, milestone deliverables
 [^d006-invariants]: Standardize BigInt Epoch Timestamps, SDK Feature Centralization, and Test Isolation (`/decisions/D-006-epoch-timestamp-and-sdk-invariants.md`)
 [^d007-cloud-fallback]: Cloud Fallback State Hydration and Save Auto-Migration (`/decisions/D-007-cloud-fallback-and-local-save-migration.md`)
 [^i009-supertux-storage]: SuperTux Persistent Storage Prompt Failure Investigation (`/investigations/I-009-supertux-persistent-storage-issue.md`)
+[^i011-docker-build]: SuperTux WASM Docker Build Optimization & Decoupling (`/investigations/I-011-supertux-wasm-docker-build-optimization.md`)
 [^r001-runbook]: Game Integration and Packaging Runbook (`/runbooks/R-001-game-integration-runbook.md`)

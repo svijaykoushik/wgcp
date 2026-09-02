@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-09-02
+* **Creation**: Added [`I-011-supertux-wasm-docker-build-optimization.md`](/investigations/I-011-supertux-wasm-docker-build-optimization.md) detailing the diagnostics and architectural decoupling solution to bypass redundant C++ WASM builds during SuperTux HTML template updates.
+
 ## 2026-08-29
 * **Creation**: Added [`I-010-viewport-escape-regression.md`](/investigations/I-010-viewport-escape-regression.md) detailing diagnostics and root causes of the viewport-first launch Escape key regression.
 
