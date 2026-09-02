@@ -1,4 +1,8 @@
 import { sendRPCMessage, getState, setState, generateUUID } from "../index.js";
+import { wasmAPI, setDefaultStorageProvider } from "./wasm.js";
+import { calculateChecksum } from "./checksum.js";
+
+export { calculateChecksum };
 
 let db: IDBDatabase | null = null;
 let currentGameId = "";
@@ -22,15 +26,6 @@ interface LocalSaveRecord {
 // Conflict resolution callbacks deferred until user chooses track
 let conflictPromiseResolve: ((val: any) => void) | null = null;
 let conflictPromiseReject: ((err: any) => void) | null = null;
-
-// SHA-256 Checksum calculator (P-002 §1.4)
-export async function calculateChecksum(data: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const dataBuffer = encoder.encode(data);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 // Opens IndexedDB partition (P-002 §3.1)
 export function initStorage(gameId: string, playerId: string): Promise<void> {
@@ -387,5 +382,11 @@ export const storageAPI = {
       // Case D (otherwise): Local is clean and matches cloud
       return Promise.resolve(local ? parsedPayloadJSON(local.payload) : null);
     });
-  }
+  },
+
+  wasm: wasmAPI
 };
+
+setDefaultStorageProvider(storageAPI);
+
+export * from "./wasm.js";

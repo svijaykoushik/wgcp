@@ -1,4 +1,5 @@
 import { initStorage, storageAPI, handleSaveACK, handleConflictResolution } from "./storage/index.js";
+import { wasmAPI } from "./storage/wasm.js";
 import { initStats, statsAPI, handleStatsACK } from "./stats/index.js";
 import { servicesAPI, handleIdentityMigrationACK } from "./services/index.js";
 
@@ -330,6 +331,7 @@ const WGCP = {
   },
 
   storage: storageAPI,
+  wasm: wasmAPI,
   stats: statsAPI,
   identity: {
     getPlayer: function() {
@@ -401,6 +403,7 @@ if (typeof window !== 'undefined') {
 
 export const init = WGCP.init;
 export const storage = WGCP.storage;
+export const wasm = WGCP.wasm;
 export const stats = WGCP.stats;
 export const identity = WGCP.identity;
 export const achievements = WGCP.achievements;
