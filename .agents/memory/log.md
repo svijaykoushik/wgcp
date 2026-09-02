@@ -1,5 +1,10 @@
 # Directory Update Log
 
+## 2026-09-02
+* **Specification**: Extended [`memory_spec.md`](/memory_spec.md) to define the `Roadmap` concept type and authoring guidelines under OKF v0.2.
+* **Creation**: Added [`roadmap.md`](/roadmap.md) defining the focus-anchored platform architecture roadmap covering completed Phases 1-4, active Phase 5 (WASM & Emscripten Storage Bridge), planned Phase 6, and deferred Phase 7.
+* **Index**: Registered [`roadmap.md`](/roadmap.md) under Core Concepts in [`index.md`](/index.md).
+
 ## 2026-09-01
 * **Creation**: Added decision [`D-007-cloud-fallback-and-local-save-migration.md`](/decisions/D-007-cloud-fallback-and-local-save-migration.md) implementing transparent cloud fallback state hydration, legacy local save migration, and game container rebuild invariants.
 * **Implementation**: Wired `WGCP_LOAD` and `WGCP_STATS_GET` RPC query paths through `LauncherView.tsx` and the standalone SDK (`sdk/src/storage/index.ts`, `sdk/src/stats/index.ts`) to ensure full cloud state rehydration on local cache miss.

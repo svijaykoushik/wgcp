@@ -7,6 +7,7 @@ This directory houses the structured memory documents for the Web Game Console P
 
 ## Core Concepts
 
+* [Platform Roadmap](/roadmap.md) - Phased implementation roadmap, capability delivery schedule, and milestone tracking.
 * [System Architecture](/architecture.md) - System design, routing topology, and dynamic reverse-proxy ingress gateway.
 * [Game Integration Specification](/game_integration.md) - Declarative contract (`game.yaml`) and Docker orchestration specifications for hosted games.
 * [CLI Operations Reference](/cli_ops.md) - Command-line lifecycle management and maintenance workflows.

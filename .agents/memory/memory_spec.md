@@ -50,6 +50,7 @@ Every markdown concept file in this bundle must declare one of the following `ty
 6. **`Finding`**: For codebase analysis findings, audits, or performance metrics. Uses ID format `F-###-<slug>.md`.
 7. **`Investigation`**: For debugging tracks, diagnostics, and issue tracking. Uses ID format `I-###-<slug>.md`.
 8. **`Runbook`**: For step-by-step developer checklists, operational procedures, or game integration guides. Uses ID format `R-###-<slug>.md`.
+9. **`Roadmap`**: For phased implementation milestones, tracking active platform horizons, and capability delivery schedules. Uses filename `roadmap.md` in the bundle root or `roadmaps/ROADMAP-###.md`.
 
 ---
 
@@ -170,5 +171,28 @@ Runbooks record step-by-step developer checklists, packaging instructions, or op
   * `runbook_id`: String (e.g., `R-001`)
   * `status`: Must be one of `active` or `draft`.
 
+---
+
+## 13. Roadmap Guidelines
+
+Roadmaps define phased implementation schedules, current active platform horizons, and cross-cutting milestones. They must adhere to these agent-friendly rules:
+* **Naming & Location**: The bundle-level roadmap is saved at `roadmap.md` in the catalog root (`.agents/memory/roadmap.md`). Scoped roadmaps may reside under `roadmaps/`.
+* **Frontmatter Metadata**:
+  * `type: Roadmap` (Required)
+  * `title`: String (Required)
+  * `description`: String (Required)
+  * `status`: Must be one of `active`, `superseded`, or `completed`.
+  * `current_phase`: Integer or String (Required, machine-readable active phase indicator).
+  * `progress`: Summary string (e.g., `"4/7 completed"`).
+* **Document Ordering (Focus-Anchored Phased Order)**:
+  1. Frontmatter with `current_phase` metadata.
+  2. Level-2 Executive Status Matrix table for zero-scroll orientation.
+  3. Active Phase detailed section placed first (goals, deliverables checklist, pre-conditions, blockers, verification invariant).
+  4. Planned / Upcoming Phases with dependencies.
+  5. Completed Foundation Phases (summarized with links to accepted decisions and test suites).
+  6. Deferred Capabilities list (preventing premature scope expansion).
+* **Milestone Item Invariant**: Every deliverable item must feature a GitHub-style task checkbox (`- [ ]` / `- [x]`) and an explicit Verification Invariant citing the test suite or verification standard.
+
 [^okf-spec]: Open Knowledge Format Specification (v0.2)
+
 
