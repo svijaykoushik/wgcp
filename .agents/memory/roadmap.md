@@ -74,9 +74,9 @@ This document defines the phased implementation strategy, milestone deliverables
   - Must respect capturing-phase Escape key forwarding and container isolation standards codified in [`R-001`](/runbooks/R-001-game-integration-runbook.md).
 * **Deliverables**:
   - [x] Implement Emscripten `IDBFS.syncfs` synchronization interceptor in the standalone SDK (`sdk/src/storage/wasm.ts`).
-  - [ ] Decouple SuperTux Dockerfile to bypass redundant C++ WASM compilation during HTML template updates ([I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md)).
-  - [ ] Resolve SuperTux persistent storage prompt request failures and wire permission handshake with `LauncherView.tsx` ([I-009](/investigations/I-009-supertux-persistent-storage-issue.md)).
-  - [ ] Package and register `games/supertux` using `./platform.sh game add ./games/supertux`.
+  - [x] Decouple SuperTux Dockerfile to bypass redundant C++ WASM compilation during HTML template updates ([I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md)).
+  - [x] Resolve SuperTux persistent storage prompt request failures and wire permission handshake with `LauncherView.tsx` ([I-009](/investigations/I-009-supertux-persistent-storage-issue.md)).
+  - [x] Package and register `games/supertux` using `./platform.sh game add ./games/supertux`.
   - [ ] Add Playwright E2E test verifying WASM level state persistence across browser reload.
 * **Verification Invariant**: SuperTux game progress persists into PostgreSQL backend without throwing unhandled browser storage permission errors during iframe startup.
 

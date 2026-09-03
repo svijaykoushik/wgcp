@@ -1,5 +1,8 @@
 # Directory Update Log
 
+## 2026-09-03
+* **Integration**: Completed standalone WGCP SDK and WASM storage bridge integration for SuperTux ([`games/supertux/mk/emscripten/template.html.in`](/games/supertux/mk/emscripten/template.html.in)). Wired Emscripten `Module.preRun` with `addRunDependency('wgcp_init')`, installed the `IDBFS` / `FS` storage bridge, enabled legacy save auto-migration, and verified sub-second workload rebuilds via `./platform.sh game add ./games/supertux`.
+
 ## 2026-09-02
 * **Investigation**: Added [`I-011-supertux-wasm-docker-build-optimization.md`](/investigations/I-011-supertux-wasm-docker-build-optimization.md) diagnosing the monolithic SuperTux Docker build and decoupling the fast HTML/SDK template generation from the 20-minute C++ WASM compilation.
 * **Specification**: Extended [`memory_spec.md`](/memory_spec.md) to define the `Roadmap` concept type and authoring guidelines under OKF v0.2.
