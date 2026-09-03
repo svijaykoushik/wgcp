@@ -15,6 +15,9 @@ sources:
   - id: permission-decision
     resource: /decisions/D-005-storage-permission-delegation.md
     title: Interactive Storage Permission Decision
+  - id: sdk-invariants
+    resource: /decisions/D-006-epoch-timestamp-and-sdk-invariants.md
+    title: BigInt Timestamps, SDK Feature Centralization, and Test Isolation
 ---
 
 # Game Integration and Packaging Runbook (R-001)
@@ -51,50 +54,49 @@ Every game must include a declarative `game.yaml` configuration in its folder ro
 
 ---
 
-### Step 3: Implement Capturing-Phase Escape Key Forwarding
-Under the viewport-first windowed model (P-004), the game iframe receives direct keyboard focus. Because cross-origin iframes trap keyboard inputs, you **must** forward Escape keypresses via the `postMessage` protocol to trigger the platform's system settings menu.
+### Step 3: Embed and Initialize the Standalone Game SDK
+All hosted games must rely exclusively on the platform's standalone Game SDK (`http://wgcp-sdk.localhost/wgcp-sdk.js`).[^sdk-invariants]
 
-#### ⚠️ Critical Firefox & Engine Swallowing Rule:
-Many game loops (such as SDL/WASM or custom canvas key managers) capture keypresses on the canvas level and call `e.stopPropagation()` or `e.preventDefault()`, which prevents bubble-phase listeners on `window` from ever firing.
-To prevent this, you **must register your keydown listener in the Capturing Phase** (`true` as the third parameter of `addEventListener`), forcing your forwarder to run first.[^escape-investigation]
+1. **Include SDK Script**:
+   Place the script tag inside the `<head>` of your game's entry HTML file:
+   ```html
+   <script src="http://wgcp-sdk.localhost/wgcp-sdk.js"></script>
+   ```
 
-Place this script tag inside the `<head>` of your game's entry HTML file:
+2. **Initialize SDK (`WGCP.init`)**:
+   Initialize the SDK before game execution begins:
+   ```javascript
+   // Casual games (captures raw Escape to open console overlay):
+   window.WGCP.init().then(function() {
+     // Rehydrate state and start game
+   });
 
-```html
-<script>
-  if (window.self !== window.top) {
-    window.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        // Halt event immediately so the game engine does not swallow it
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Generate UUIDv4 correlation ID to pass security envelope checks
-        var correlationId = (function() {
-          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            try { return crypto.randomUUID(); } catch (err) {}
-          }
-          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
-        })();
+   // Games with native in-game pause menus (e.g. SuperTux / WASM):
+   window.WGCP.init({
+     captureEscape: false // Pass raw Escape to game engine; Shift+Escape triggers console overlay
+   }).then(function() {
+     // Rehydrate state / install WASM storage bridge
+   });
+   ```
 
-        // Resolve parent origin dynamically and emit secure message
-        var urlParams = new URLSearchParams(window.location.search);
-        var portalOrigin = urlParams.get('wgcp_origin') || 'http://localhost';
-        
-        window.parent.postMessage({
-          id: correlationId,
-          type: 'WGCP_TOGGLE_MENU',
-          source: 'WGCP_SDK',
-          version: '2.0.0'
-        }, portalOrigin);
-      }
-    }, true); // Crucial: Capturing phase listener
-  }
-</script>
-```
+3. **WASM / Emscripten Games**:
+   For C++/WASM games with Emscripten virtual filesystems, install the storage bridge in `Module.preRun`:
+   ```javascript
+   Module.preRun.push(function() {
+     Module.addRunDependency('wgcp_init');
+     window.WGCP.init({ captureEscape: false }).then(function() {
+       var bridge = window.WGCP.wasm.install({
+         mountPath: '/home/web_user/.local/share/<game>',
+         slot: 'gameState',
+         fs: typeof FS !== 'undefined' ? FS : (window.FS || Module.FS),
+         debounceMs: 500
+       });
+       return bridge.restoreFromCloud();
+     }).finally(function() {
+       Module.removeRunDependency('wgcp_init');
+     });
+   });
+   ```
 
 ---
 
@@ -123,3 +125,4 @@ Once your files are configured:
 [^game-integration-spec]: Game Integration Specification ([/game_integration.md](/game_integration.md))
 [^escape-investigation]: Escape Key Regression Investigation ([/investigations/I-010-viewport-escape-regression.md](/investigations/I-010-viewport-escape-regression.md))
 [^permission-decision]: Storage Permission Delegation Decision ([/decisions/D-005-storage-permission-delegation.md](/decisions/D-005-storage-permission-delegation.md))
+[^sdk-invariants]: BigInt Epoch Timestamps, SDK Feature Centralization, and Test Isolation ([/decisions/D-006-epoch-timestamp-and-sdk-invariants.md](/decisions/D-006-epoch-timestamp-and-sdk-invariants.md))

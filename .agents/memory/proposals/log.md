@@ -1,5 +1,8 @@
 # Proposals Update Log
 
+## 2026-09-03
+* **Creation & Acceptance**: Added proposal [`P-005-configurable-sdk-initialization-and-escape-forwarding.md`](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md) proposing `WGCPInitOptions` (`allowedOrigins`, `captureEscape`, `menuShortcut`) to allow games with native pause menus to bypass raw `Escape` interception while maintaining `Shift+Escape` for console menu overlay toggling. Approved and marked `accepted`.
+
 ## 2026-08-29
 * **Status**: Updated proposals [`P-002-game-sdk-storage-sync.md`](/proposals/P-002-game-sdk-storage-sync.md) and [`P-003-game-sdk-services-api.md`](/proposals/P-003-game-sdk-services-api.md) status to `accepted` after completing the platform feasibility investigation and removing obsolete `WGCP.syncFS()` namespace leaks to align with the private compilation boundaries of WASM/Emscripten games.
 

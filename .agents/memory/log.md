@@ -1,6 +1,8 @@
 # Directory Update Log
 
 ## 2026-09-03
+* **Proposal & Decision**: Authored and accepted proposal [`P-005-configurable-sdk-initialization-and-escape-forwarding.md`](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md) and decision [`D-008-configurable-sdk-init-and-escape-handling.md`](/decisions/D-008-configurable-sdk-init-and-escape-handling.md) defining typed `WGCPInitOptions` (`captureEscape: false`) and `Shift+Escape` chord handling to eliminate input collisions with native in-game pause menus.
+* **Runbook**: Updated [`R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) Step 3 with instructions for `WGCPInitOptions` configuration and Emscripten WASM storage bridge setup.
 * **Feature**: Added configurable Escape key interception (`captureEscape: boolean`) to `WGCP.init()` in the standalone SDK, allowing games with native pause menus (such as SuperTux) to retain full in-game `Esc` handling while preserving `Shift+Escape` for console overlay toggling.
 * **Integration**: Completed standalone WGCP SDK and WASM storage bridge integration for SuperTux ([`games/supertux/mk/emscripten/template.html.in`](/games/supertux/mk/emscripten/template.html.in)). Wired Emscripten `Module.preRun` with `addRunDependency('wgcp_init')`, installed the `IDBFS` / `FS` storage bridge, enabled legacy save auto-migration, and verified sub-second workload rebuilds via `./platform.sh game add ./games/supertux`.
 

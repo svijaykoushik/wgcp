@@ -1,5 +1,8 @@
 # Decisions Update Log
 
+## 2026-09-03
+* **Creation**: Added decision [`D-008-configurable-sdk-init-and-escape-handling.md`](/decisions/D-008-configurable-sdk-init-and-escape-handling.md) adopting `WGCPInitOptions` (`captureEscape: false`) and `Shift+Escape` chord handling to resolve Escape key collisions with native in-game pause menus.
+
 ## 2026-09-01
 * **Creation**: Added decision [`D-007-cloud-fallback-and-local-save-migration.md`](file://./D-007-cloud-fallback-and-local-save-migration.md) implementing transparent cloud fallback state hydration, legacy local save migration, and game container rebuild invariants.
 
