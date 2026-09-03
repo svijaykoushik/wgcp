@@ -251,10 +251,16 @@ if (typeof window !== 'undefined') {
   } catch(e) {}
 }
 
+export interface WGCPInitOptions {
+  allowedOrigins?: string[];
+  captureEscape?: boolean; // Defaults to true. When false, raw Escape is passed to the game.
+  menuShortcut?: string; // Optional custom shortcut descriptor
+}
+
 // WGCP Core namespace object
 const WGCP = {
   getState: getState,
-  init: function(options?: { allowedOrigins?: string[] }) {
+  init: function(options?: WGCPInitOptions) {
     if (currentState !== 'UNINITIALIZED') {
       return Promise.resolve();
     }
@@ -285,8 +291,14 @@ const WGCP = {
 
     // Forward Escape keypresses to parent console to toggle the menu (P-004)
     if (typeof window !== 'undefined' && window.self !== window.top) {
+      const shouldCaptureEscape = options?.captureEscape !== false;
+
       window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+        const isRawEscape = e.key === 'Escape' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
+        const isShiftEscape = e.key === 'Escape' && e.shiftKey;
+
+        // Trigger menu if raw Escape is enabled or via Shift+Escape chord
+        if ((shouldCaptureEscape && isRawEscape) || isShiftEscape) {
           e.preventDefault();
           e.stopPropagation();
           
