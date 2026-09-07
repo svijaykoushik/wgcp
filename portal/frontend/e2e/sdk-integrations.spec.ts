@@ -22,20 +22,20 @@ test.describe('WGCP SDK integrations E2E Tests', () => {
   // Helper to log in and ensure game is in library
   async function setupGame(page: any, gameId: string, buttonSelector: string) {
     // Attach detailed console log forwarders
-    page.on('console', msg => {
+    page.on('console', (msg: any) => {
       console.log(`[BROWSER CONSOLE - ${msg.type()}]: ${msg.text()} (${msg.location()?.url || 'unknown'})`);
     });
-    page.on('pageerror', err => {
+    page.on('pageerror', (err: any) => {
       console.log(`[BROWSER EXCEPTION]: ${err.message}\n${err.stack}`);
     });
-    page.on('request', req => {
+    page.on('request', (req: any) => {
       console.log(`[REQUEST]: ${req.method()} ${req.url()}`);
     });
-    page.on('response', resp => {
+    page.on('response', (resp: any) => {
       const req = resp.request();
       console.log(`[RESPONSE]: ${resp.status()} ${req.url()}`);
     });
-    page.on('requestfailed', req => {
+    page.on('requestfailed', (req: any) => {
       console.log(`[REQUEST FAILED]: ${req.method()} ${req.url()} - ${req.failure()?.errorText}`);
     });
 
@@ -79,6 +79,14 @@ test.describe('WGCP SDK integrations E2E Tests', () => {
     const playBtn = page.locator(buttonSelector);
     await expect(playBtn).toBeVisible({ timeout: 15000 });
     await playBtn.click();
+
+    // If permission modal appears (e.g. persistent storage request in SuperTux), allow it
+    const permissionModal = page.locator('[aria-label="Permission Request"]');
+    try {
+      await permissionModal.waitFor({ state: 'visible', timeout: 3000 });
+      const allowBtn = permissionModal.locator('button:has-text("Allow")');
+      await allowBtn.click();
+    } catch {}
 
     // Verify iframe load
     const iframeElement = page.locator('iframe');
@@ -258,5 +266,121 @@ test.describe('WGCP SDK integrations E2E Tests', () => {
     await page.keyboard.press('Escape');
     const systemMenu = page.locator('button:has-text("Resume Game")');
     await expect(systemMenu).toBeVisible({ timeout: 10000 });
+  });
+
+  test('SuperTux - WASM IDBFS Save State Persistence, Cloud Rehydration across fresh sessions, and Shift+Escape chord handling', async ({ browser, page }) => {
+    test.setTimeout(120000);
+    await setupGame(page, 'supertux', '[data-focusable="play-supertux"]');
+    const frame = await getFrame(page, /supertux\.localhost/);
+
+    // Intercept backend save call
+    const savePromise = page.waitForResponse(
+      (resp) => resp.url().includes('/saves/gameState') && resp.request().method() === 'POST',
+      { timeout: 30000 }
+    );
+
+    // 1. Create game level progress in Emscripten VFS and sync via IDBFS bridge
+    const saveStatContent = '(supertux-stats\n  (coins 999)\n  (lives 5)\n  (unlocked-levels ("level1" "level2" "bonus1"))\n)';
+    await frame.evaluate(async (content) => {
+      const targetFS = (window as any).FS || (window as any).Module?.FS;
+      if (!targetFS) {
+        throw new Error('Emscripten FS not available on SuperTux window');
+      }
+      const rootPath = '/home/web_user/.local/share/supertux2';
+      const saveDir = `${rootPath}/profile1`;
+      
+      // Ensure target directory exists in VFS
+      if (typeof targetFS.mkdirTree === 'function') {
+        try { targetFS.mkdirTree(saveDir); } catch(e) {}
+      } else {
+        const parts = saveDir.split('/').filter(Boolean);
+        let curr = '';
+        for (const p of parts) {
+          curr += '/' + p;
+          if (!targetFS.analyzePath(curr).exists) {
+            try { targetFS.mkdir(curr); } catch(e) {}
+          }
+        }
+      }
+
+      // Write mock save file
+      targetFS.writeFile(`${saveDir}/world1.stat`, content);
+
+      // Trigger Emscripten syncfs / WASM bridge
+      if (typeof (window as any).supertux2_syncfs === 'function') {
+        (window as any).supertux2_syncfs();
+      } else if (typeof targetFS.syncfs === 'function') {
+        targetFS.syncfs(false, () => {});
+      }
+    }, saveStatContent);
+
+    // 2. Await backend network save resolution
+    const response = await savePromise;
+    expect(response.status()).toBe(200);
+
+    // 3. Open a fresh browser context (simulating private window / new device)
+    const freshContext = await browser.newContext();
+    const freshPage = await freshContext.newPage();
+
+    try {
+      await freshPage.goto('http://localhost');
+      await freshPage.waitForSelector('#username, [data-focusable="nav-library"]', { timeout: 15000 });
+      const usernameInput = freshPage.locator('#username');
+      if (await usernameInput.isVisible()) {
+        await usernameInput.fill('testuser');
+        await freshPage.click('button[data-focusable="login-btn"]');
+      }
+
+      await expect(freshPage.locator('[data-focusable="nav-library"]')).toBeVisible({ timeout: 15000 });
+      await freshPage.locator('[data-focusable="nav-library"]').click();
+      await freshPage.locator('[data-focusable="play-supertux"]').click();
+
+      // Handle permission modal in fresh context if prompted
+      const freshPermissionModal = freshPage.locator('[aria-label="Permission Request"]');
+      try {
+        await freshPermissionModal.waitFor({ state: 'visible', timeout: 3000 });
+        await freshPermissionModal.locator('button:has-text("Allow")').click();
+      } catch {}
+
+      const freshFrame = await getFrame(freshPage, /supertux\.localhost/);
+
+      // Verify that cloud rehydration populated the file in the fresh Emscripten VFS
+      // Wait up to 10 seconds for cloud hydration if still in-flight
+      await freshFrame.waitForFunction(() => {
+        const targetFS = (window as any).FS || (window as any).Module?.FS;
+        if (!targetFS) return false;
+        const filePath = '/home/web_user/.local/share/supertux2/profile1/world1.stat';
+        return targetFS.analyzePath && targetFS.analyzePath(filePath).exists;
+      }, { timeout: 15000 });
+
+      const rehydratedContent = await freshFrame.evaluate(() => {
+        const targetFS = (window as any).FS || (window as any).Module?.FS;
+        const filePath = '/home/web_user/.local/share/supertux2/profile1/world1.stat';
+        return targetFS.readFile(filePath, { encoding: 'utf8' });
+      });
+
+      expect(rehydratedContent).toContain('(coins 999)');
+      expect(rehydratedContent).toContain('unlocked-levels ("level1" "level2" "bonus1")');
+    } finally {
+      await freshContext.close();
+    }
+
+    // 4. Verify Escape and Shift+Escape behavior (per D-008: SuperTux has captureEscape: false)
+    await frame.evaluate(() => {
+      window.focus();
+    });
+
+    // Press regular Escape inside SuperTux -> Overlay should NOT appear (passed to game engine)
+    await page.keyboard.press('Escape');
+    const systemMenu = page.locator('button:has-text("Resume Game")');
+    await expect(systemMenu).not.toBeVisible();
+
+    // Press Shift+Escape inside SuperTux -> Overlay SHOULD appear
+    await page.keyboard.press('Shift+Escape');
+    await expect(systemMenu).toBeVisible({ timeout: 10000 });
+
+    // Click Resume Game to dismiss overlay
+    await systemMenu.click();
+    await expect(systemMenu).not.toBeVisible();
   });
 });

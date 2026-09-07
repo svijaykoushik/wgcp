@@ -3,10 +3,10 @@ type: Roadmap
 title: WGCP Platform Architecture Roadmap
 description: Phased implementation roadmap, capability delivery schedule, and milestone tracking.
 status: active
-current_phase: 5
-progress: "4/7 completed"
-generated: { by: antigravity/3.7, at: 2026-09-02T22:20:00Z }
-verified: { by: human:vijaykoushik, at: 2026-09-02T22:20:00Z }
+current_phase: 6
+progress: "5/7 completed"
+generated: { by: antigravity/3.7, at: 2026-09-07T17:32:00Z }
+verified: { by: human:vijaykoushik, at: 2026-09-07T17:32:00Z }
 sources:
   - id: okf-spec
     resource: /memory_spec.md
@@ -35,6 +35,12 @@ sources:
   - id: d007-cloud-fallback
     resource: /decisions/D-007-cloud-fallback-and-local-save-migration.md
     title: Cloud Fallback State Hydration and Save Auto-Migration
+  - id: p005-sdk-init-options
+    resource: /proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md
+    title: Configurable Game SDK Initialization and Escape Key Handling
+  - id: d008-configurable-init
+    resource: /decisions/D-008-configurable-sdk-init-and-escape-handling.md
+    title: Adopt Configurable SDK Initialization (WGCPInitOptions) and Shift+Escape Fallback
   - id: i009-supertux-storage
     resource: /investigations/I-009-supertux-persistent-storage-issue.md
     title: SuperTux Persistent Storage Prompt Failure Investigation
@@ -60,31 +66,13 @@ This document defines the phased implementation strategy, milestone deliverables
 | **Phase 2** | Console Portal & Launchpad Experience | `COMPLETED` | [P-004](/proposals/P-004-game-launch-refactor.md), [D-004](/decisions/D-004-game-launch-refactor.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | `viewport.spec.ts`, `permission.spec.ts` |
 | **Phase 3** | Standalone Game SDK & Backend Services | `COMPLETED` | [P-002](/proposals/P-002-game-sdk-storage-sync.md), [P-003](/proposals/P-003-game-sdk-services-api.md), [D-006](/decisions/D-006-epoch-timestamp-and-sdk-invariants.md) | Express REST tests, BigInt schema check |
 | **Phase 4** | Game Integrations & Hydration Hardening | `COMPLETED` | [D-007](/decisions/D-007-cloud-fallback-and-local-save-migration.md), [`/runbooks/R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) | `sdk-integrations.spec.ts` (All 4 games pass) |
-| **Phase 5** | WASM & Emscripten Storage Bridge | `ACTIVE` | [P-005](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md), [D-008](/decisions/D-008-configurable-sdk-init-and-escape-handling.md), [I-009](/investigations/I-009-supertux-persistent-storage-issue.md), [I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | SuperTux persistent storage E2E |
-| **Phase 6** | Portal Services UI & Dashboards | `PLANNED` | [P-003](/proposals/P-003-game-sdk-services-api.md) | Playwright UI navigation tests |
+| **Phase 5** | WASM & Emscripten Storage Bridge | `COMPLETED` | [P-005](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md), [D-008](/decisions/D-008-configurable-sdk-init-and-escape-handling.md), [I-009](/investigations/I-009-supertux-persistent-storage-issue.md), [I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | `sdk-integrations.spec.ts` (SuperTux WASM pass) |
+| **Phase 6** | Portal Services UI & Dashboards | `ACTIVE` | [P-003](/proposals/P-003-game-sdk-services-api.md) | Playwright UI navigation tests |
 | **Phase 7** | Multiplayer Lobbies & Social Infrastructure | `DEFERRED` | [P-003](/proposals/P-003-game-sdk-services-api.md) Section 2.3 | Deferred scope specification |
 
 ---
 
-## 2. Active Focus: Phase 5 — WASM & Emscripten Storage Bridge
-
-* **Goal**: Provide transparent IDBFS / persistent storage bridging for compiled WebAssembly and C/C++ games (e.g. SuperTux) running inside sandboxed cross-origin iframes.[^i009-supertux-storage]
-* **Pre-conditions & Decisions**:
-  - Requires interactive storage permission delegation shim adhering to [D-005](/decisions/D-005-storage-permission-delegation.md).
-  - Must respect capturing-phase Escape key forwarding and container isolation standards codified in [`R-001`](/runbooks/R-001-game-integration-runbook.md).
-* **Deliverables**:
-  - [x] Implement Emscripten `IDBFS.syncfs` synchronization interceptor in the standalone SDK (`sdk/src/storage/wasm.ts`).
-  - [x] Decouple SuperTux Dockerfile to bypass redundant C++ WASM compilation during HTML template updates ([I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md)).
-  - [x] Resolve SuperTux persistent storage prompt request failures and wire permission handshake with `LauncherView.tsx` ([I-009](/investigations/I-009-supertux-persistent-storage-issue.md)).
-  - [x] Package and register `games/supertux` using `./platform.sh game add ./games/supertux`.
-  - [ ] Add Playwright E2E test verifying WASM level state persistence across browser reload.
-* **Verification Invariant**: SuperTux game progress persists into PostgreSQL backend without throwing unhandled browser storage permission errors during iframe startup.
-
----
-
-## 3. Upcoming Milestones
-
-### Phase 6: Portal Services UI & Dashboards (`PLANNED`)
+## 2. Active Focus: Phase 6 — Portal Services UI & Dashboards
 
 * **Goal**: Build visual console portal experiences for player achievements, global leaderboards, personal bests, and user leveling progress.
 * **Dependencies**: Relies on backend tables and REST endpoints established in Phase 3 ([P-003](/proposals/P-003-game-sdk-services-api.md)).
@@ -97,7 +85,15 @@ This document defines the phased implementation strategy, milestone deliverables
 
 ---
 
-## 4. Completed Milestones
+## 3. Completed Milestones
+
+### Phase 5: WASM & Emscripten Storage Bridge (`COMPLETED`)
+* Designed and built Emscripten `IDBFS.syncfs` & VFS synchronization interceptor in the standalone SDK (`sdk/src/storage/wasm.ts`).
+* Decoupled SuperTux Dockerfile to bypass redundant C++ WASM compilation during HTML template updates ([I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md)).
+* Resolved SuperTux persistent storage prompt request failures and wired permission handshake with `LauncherView.tsx` ([I-009](/investigations/I-009-supertux-persistent-storage-issue.md), [D-005](/decisions/D-005-storage-permission-delegation.md)).
+* Configured selective `captureEscape: false` and `Shift+Escape` overlay chords for native pause menu compatibility ([P-005](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md), [D-008](/decisions/D-008-configurable-sdk-init-and-escape-handling.md)).
+* Packaged and registered `games/supertux` in the platform registry.
+* Added Playwright E2E test verifying WASM level state persistence and cloud rehydration across fresh sessions (`portal/frontend/e2e/sdk-integrations.spec.ts`).
 
 ### Phase 1: Ingress Gateway & Registration Pipeline (`COMPLETED`)
 * Designed and deployed Caddy-powered dynamic reverse proxy gateway on port 80 ([`architecture.md`](/architecture.md)).
