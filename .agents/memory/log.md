@@ -1,5 +1,10 @@
 # Directory Update Log
 
+## 2026-09-07
+* **Proposal**: Authored [`P-006-declarative-achievements-leaderboards-schema.md`](/proposals/P-006-declarative-achievements-leaderboards-schema.md) specifying versioned declarative `achievements` and `leaderboards` manifests in `game.yaml` (v2.1.0), client submission protocols, and in-depth edge-case resolution (version drift, scale changes, inverted sorting, offline queuing, cross-origin assets, and dynamic fallback).
+* **Milestone**: Completed **Phase 6: Portal Services UI & Dashboards** ([`roadmap.md`](/roadmap.md)). Implemented Achievements Showcase ([`AchievementsView.tsx`](/portal/frontend/src/views/AchievementsView.tsx)), Global Leaderboard Explorer ([`LeaderboardsView.tsx`](/portal/frontend/src/views/LeaderboardsView.tsx)), and Player Profile & Progression ([`ProfileView.tsx`](/portal/frontend/src/views/ProfileView.tsx)) with 100% spatial gamepad/keyboard navigation and E2E test coverage (`dashboards.spec.ts`).
+* **Milestone**: Completed **Phase 5: WASM & Emscripten Storage Bridge** ([`roadmap.md`](/roadmap.md)). Verified SuperTux IDBFS state persistence, cloud fallback hydration, and Shift+Escape menu chords with Playwright E2E integration test (`sdk-integrations.spec.ts`).
+
 ## 2026-09-03
 * **Proposal & Decision**: Authored and accepted proposal [`P-005-configurable-sdk-initialization-and-escape-forwarding.md`](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md) and decision [`D-008-configurable-sdk-init-and-escape-handling.md`](/decisions/D-008-configurable-sdk-init-and-escape-handling.md) defining typed `WGCPInitOptions` (`captureEscape: false`) and `Shift+Escape` chord handling to eliminate input collisions with native in-game pause menus.
 * **Runbook**: Updated [`R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) Step 3 with instructions for `WGCPInitOptions` configuration and Emscripten WASM storage bridge setup.
