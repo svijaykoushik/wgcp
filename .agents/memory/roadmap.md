@@ -4,9 +4,9 @@ title: WGCP Platform Architecture Roadmap
 description: Phased implementation roadmap, capability delivery schedule, and milestone tracking.
 status: active
 current_phase: 6
-progress: "5/7 completed"
-generated: { by: antigravity/3.7, at: 2026-09-07T17:32:00Z }
-verified: { by: human:vijaykoushik, at: 2026-09-07T17:32:00Z }
+progress: "6/7 completed"
+generated: { by: antigravity/3.7, at: 2026-09-07T17:50:00Z }
+verified: { by: human:vijaykoushik, at: 2026-09-07T17:50:00Z }
 sources:
   - id: okf-spec
     resource: /memory_spec.md
@@ -67,25 +67,19 @@ This document defines the phased implementation strategy, milestone deliverables
 | **Phase 3** | Standalone Game SDK & Backend Services | `COMPLETED` | [P-002](/proposals/P-002-game-sdk-storage-sync.md), [P-003](/proposals/P-003-game-sdk-services-api.md), [D-006](/decisions/D-006-epoch-timestamp-and-sdk-invariants.md) | Express REST tests, BigInt schema check |
 | **Phase 4** | Game Integrations & Hydration Hardening | `COMPLETED` | [D-007](/decisions/D-007-cloud-fallback-and-local-save-migration.md), [`/runbooks/R-001-game-integration-runbook.md`](/runbooks/R-001-game-integration-runbook.md) | `sdk-integrations.spec.ts` (All 4 games pass) |
 | **Phase 5** | WASM & Emscripten Storage Bridge | `COMPLETED` | [P-005](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md), [D-008](/decisions/D-008-configurable-sdk-init-and-escape-handling.md), [I-009](/investigations/I-009-supertux-persistent-storage-issue.md), [I-011](/investigations/I-011-supertux-wasm-docker-build-optimization.md), [D-005](/decisions/D-005-storage-permission-delegation.md) | `sdk-integrations.spec.ts` (SuperTux WASM pass) |
-| **Phase 6** | Portal Services UI & Dashboards | `ACTIVE` | [P-003](/proposals/P-003-game-sdk-services-api.md) | Playwright UI navigation tests |
+| **Phase 6** | Portal Services UI & Dashboards | `COMPLETED` | [P-003](/proposals/P-003-game-sdk-services-api.md) | `dashboards.spec.ts` (All 5 suites pass) |
 | **Phase 7** | Multiplayer Lobbies & Social Infrastructure | `DEFERRED` | [P-003](/proposals/P-003-game-sdk-services-api.md) Section 2.3 | Deferred scope specification |
 
 ---
 
-## 2. Active Focus: Phase 6 — Portal Services UI & Dashboards
+## 2. Completed Milestones
 
-* **Goal**: Build visual console portal experiences for player achievements, global leaderboards, personal bests, and user leveling progress.
-* **Dependencies**: Relies on backend tables and REST endpoints established in Phase 3 ([P-003](/proposals/P-003-game-sdk-services-api.md)).
-* **Deliverables**:
-  - [ ] Portal Achievements Showcase: Render unlocked/locked achievements per game with progress bars and timestamps.
-  - [ ] Global Leaderboard Explorer: Paginated high-score boards with top-rank highlights and personal best rank indicators.
-  - [ ] Player Profile & Progression View: Visual XP leveling curves, total play time counters, and active session summaries.
-  - [ ] Spatial Gamepad Navigation: Expand 2D focus engine to seamlessly navigate between game cards, leaderboard tabs, and profile modals.
-* **Verification Invariant**: All portal dashboard screens support full gamepad D-pad and arrow key spatial navigation with 100% keyboard accessibility.
-
----
-
-## 3. Completed Milestones
+### Phase 6: Portal Services UI & Dashboards (`COMPLETED`)
+* Designed and implemented **Achievements Showcase** view (`views/AchievementsView.tsx`) with dynamic trophy unlock tracking, progress rings, and filter controls.
+* Built **Global Leaderboard Explorer** view (`views/LeaderboardsView.tsx`) with podium rankings (🥇, 🥈, 🥉), personal best callouts, and pagination.
+* Created **Player Profile & Progression** view (`views/ProfileView.tsx`) with XP leveling curves, lifetime stat counters, and per-game progress cards.
+* Expanded spatial navigation and bumper navigation (PageUp / PageDown) across all 5 portal views (`NavBar.tsx`, `App.tsx`).
+* Added comprehensive Playwright E2E test suite (`portal/frontend/e2e/dashboards.spec.ts`) validating 100% spatial navigation and service integration.
 
 ### Phase 5: WASM & Emscripten Storage Bridge (`COMPLETED`)
 * Designed and built Emscripten `IDBFS.syncfs` & VFS synchronization interceptor in the standalone SDK (`sdk/src/storage/wasm.ts`).

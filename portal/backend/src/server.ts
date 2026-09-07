@@ -781,6 +781,59 @@ app.post("/api/v1/games/:gameId/progression/addXP", async (req, res) => {
 });
 
 
+// 6. User Profile Aggregation API
+app.get("/api/v1/profile", async (req, res) => {
+  const user = await getAuthenticatedUser(req);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const userLibrary = await db.query.library.findMany({
+      where: eq(library.userId, user.id),
+    });
+    const userAchievements = await db.query.achievements.findMany({
+      where: eq(achievements.userId, user.id),
+    });
+    const userStats = await db.query.stats.findMany({
+      where: eq(stats.userId, user.id),
+    });
+    const userLeaderboards = await db.query.leaderboards.findMany({
+      where: eq(leaderboards.userId, user.id),
+    });
+    const userProgression = await db.query.progression.findMany({
+      where: eq(progression.userId, user.id),
+    });
+
+    const totalXp = userProgression.reduce((acc, p) => acc + p.totalXp, 0);
+    let overallLevel = 1;
+    let xpRemaining = totalXp;
+    while (xpRemaining >= overallLevel * 100) {
+      xpRemaining -= overallLevel * 100;
+      overallLevel += 1;
+    }
+    const currentXp = xpRemaining;
+    const nextLevelRequiredXp = overallLevel * 100;
+
+    return res.json({
+      user,
+      library: userLibrary.map((l) => l.gameId),
+      overall: {
+        level: overallLevel,
+        currentXp,
+        nextLevelXp: nextLevelRequiredXp,
+        totalXp,
+        unlockedAchievementsCount: userAchievements.filter((a) => a.unlocked).length,
+      },
+      progression: userProgression,
+      achievements: userAchievements,
+      stats: userStats,
+      leaderboards: userLeaderboards,
+    });
+  } catch (err) {
+    console.error("Failed to load profile:", err);
+    return res.status(500).json({ error: "Failed to load profile" });
+  }
+});
+
 // Seed function to seed the database
 async function seedUser() {
   let retries = 5;

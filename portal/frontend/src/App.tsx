@@ -6,11 +6,16 @@ import { useSpatialNav } from './hooks/useSpatialNav';
 import { LoginView } from './views/LoginView';
 import { LibraryView } from './views/LibraryView';
 import { CatalogueView } from './views/CatalogueView';
+import { AchievementsView } from './views/AchievementsView';
+import { LeaderboardsView } from './views/LeaderboardsView';
+import { ProfileView } from './views/ProfileView';
 import { LauncherView } from './views/LauncherView';
-import { NavBar } from './components/NavBar';
+import { NavBar, PortalViewType } from './components/NavBar';
 import { InputPrompts } from './components/InputPrompts';
 import { SkeletonCard } from './components/SkeletonCard';
 import { Game, User } from './types';
+
+const VIEW_ORDER: PortalViewType[] = ['library', 'catalogue', 'achievements', 'leaderboards', 'profile'];
 
 function parseRegistryV2(data: any): Game[] {
   if (!data) return [];
@@ -76,7 +81,6 @@ function parseRegistryV2(data: any): Game[] {
         .map(([_, rel]) => rel);
 
       if (stableReleases.length > 0) {
-        // Sort by 'added' timestamp descending to get the latest release
         stableReleases.sort((a: any, b: any) => (b.added || 0) - (a.added || 0));
         activeRelease = stableReleases[0];
       } else {
@@ -117,8 +121,8 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
-  // Navigation: 'library' | 'catalogue'
-  const [currentView, setCurrentView] = useState<'library' | 'catalogue'>('library');
+  // Navigation
+  const [currentView, setCurrentView] = useState<PortalViewType>('library');
   
   // View transition hook
   const { startTransition, transitionClass } = useViewTransition(300);
@@ -156,7 +160,6 @@ export default function App() {
     async function loadData() {
       setCatalogLoading(true);
       try {
-        // Fetch registry
         const regRes = await fetch('/api/registry.json');
         let games: Game[] = [];
         if (regRes.ok) {
@@ -165,7 +168,6 @@ export default function App() {
           setRegistry(games);
         }
 
-        // Fetch user's library
         const libRes = await fetch('/api/v1/library');
         if (libRes.ok) {
           const libData = await libRes.json();
@@ -181,7 +183,7 @@ export default function App() {
     loadData();
   }, [user]);
 
-  // Bind spatial navigation input gamepad polling, disable inside launcher or when inputs are active
+  // Bind spatial navigation input gamepad polling
   const isInputActive = document.activeElement?.tagName === 'INPUT';
   useGamepad(!activeGame && !isInputActive);
 
@@ -192,11 +194,9 @@ export default function App() {
   useEffect(() => {
     if (!user || activeGame || catalogLoading) return;
     
-    // Give DOM a frame to render
     const frame = requestAnimationFrame(() => {
       const focusables = document.querySelectorAll('[data-focusable]');
       if (focusables.length > 0) {
-        // Prefer content focusable elements first (play/add/browse actions), then headers
         const contentEl = Array.from(focusables).find((el) => {
           const id = el.getAttribute('data-focusable') || '';
           return !id.startsWith('nav-');
@@ -214,12 +214,13 @@ export default function App() {
   useEffect(() => {
     if (!user || activeGame) return;
     const handleBumpersGlobal = (e: KeyboardEvent) => {
-      if (e.key === 'PageUp' && currentView !== 'library') {
+      const currentIndex = VIEW_ORDER.indexOf(currentView);
+      if (e.key === 'PageUp' && currentIndex > 0) {
         e.preventDefault();
-        handleViewChange('library');
-      } else if (e.key === 'PageDown' && currentView !== 'catalogue') {
+        handleViewChange(VIEW_ORDER[currentIndex - 1]);
+      } else if (e.key === 'PageDown' && currentIndex < VIEW_ORDER.length - 1) {
         e.preventDefault();
-        handleViewChange('catalogue');
+        handleViewChange(VIEW_ORDER[currentIndex + 1]);
       }
     };
     window.addEventListener('keydown', handleBumpersGlobal);
@@ -292,11 +293,13 @@ export default function App() {
     }
   };
 
-  const handleViewChange = (targetView: 'library' | 'catalogue') => {
+  const handleViewChange = (targetView: PortalViewType) => {
     if (targetView === currentView) return;
-    const direction = targetView === 'catalogue' ? 'right' : 'left';
+    const curIdx = VIEW_ORDER.indexOf(currentView);
+    const targetIdx = VIEW_ORDER.indexOf(targetView);
+    const direction = targetIdx > curIdx ? 'right' : 'left';
     startTransition(targetView, direction, (view) => {
-      setCurrentView(view as 'library' | 'catalogue');
+      setCurrentView(view as PortalViewType);
     });
   };
 
@@ -360,13 +363,30 @@ export default function App() {
               onRemove={removeFromLibrary}
               onNavigateToCatalogue={() => handleViewChange('catalogue')}
             />
-          ) : (
+          ) : currentView === 'catalogue' ? (
             <CatalogueView
               games={registry}
               libraryIds={libraryIds}
               onAdd={addToLibrary}
               onRemove={removeFromLibrary}
               onBackToLibrary={() => handleViewChange('library')}
+            />
+          ) : currentView === 'achievements' ? (
+            <AchievementsView
+              games={registry}
+              onLaunchGame={setActiveGame}
+            />
+          ) : currentView === 'leaderboards' ? (
+            <LeaderboardsView
+              games={registry}
+              onLaunchGame={setActiveGame}
+            />
+          ) : (
+            <ProfileView
+              user={user}
+              games={libraryGames.length > 0 ? libraryGames : registry}
+              onLaunchGame={setActiveGame}
+              onNavigateToCatalogue={() => handleViewChange('catalogue')}
             />
           )}
         </main>
