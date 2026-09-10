@@ -1,10 +1,10 @@
 ---
 type: Proposal
 proposal_id: P-006
-title: Declarative Game Services Schema (Achievements & Leaderboards) for game.yaml and Registry v2.1
-description: Formal specification proposal extending and superseding P-001 (Game Registry Specification v2) upon acceptance, codifying comprehensive versioned property specifications for game.yaml and games.json, client submission contracts, and operational lifecycle edge cases.
+title: Declarative Game Services Schema (Achievements & Leaderboards) for game.yaml and Registry v2.2
+description: Formal specification proposal extending and superseding P-001 (Game Registry Specification v2) upon acceptance, codifying versioned declarative achievements, enhanced multi-dimensional leaderboards in game.yaml and games.json, clean platform-vs-game trust boundaries, and operational lifecycle edge cases.
 status: proposed
-generated: { by: antigravity/3.7, at: 2026-09-07T18:32:00+05:30 }
+generated: { by: antigravity/3.7, at: 2026-09-10T22:50:00+05:30 }
 sources:
   - id: p001-registry
     resource: /proposals/P-001-game-registry-spec-v2.md
@@ -30,42 +30,52 @@ supersedes:
     title: Game Registry Specification (v2)
 ---
 
-# Proposal (P-006) - Declarative Game Services Schema for `game.yaml` and Registry v2.1
+# Proposal (P-006) - Declarative Game Services Schema for `game.yaml` and Registry v2.2
 
 ## 1. Executive Summary & Supersession Notice
 
-This proposal defines the **Game Registry Specification (v2.1)** and the declarative contract for **Game Services (Achievements and Leaderboards)** in `game.yaml`.
+This proposal defines the **Game Registry Specification (v2.2)** and the declarative contract for **Game Services (Achievements and Leaderboards)** in `game.yaml`.
 
 > [!IMPORTANT]
-> **Supersession Notice:** Upon formal ratification and acceptance, this specification will **supersede Proposal [P-001: Game Registry Specification (v2)](/proposals/P-001-game-registry-spec-v2.md)** and update the canonical integration contract [`/game_integration.md`](/game_integration.md) from schema version `2.0.0` to `2.1.0`.
+> **Supersession Notice:** Upon formal ratification and acceptance, this specification will **supersede Proposal [P-001: Game Registry Specification (v2)](/proposals/P-001-game-registry-spec-v2.md)** and update the canonical integration contract [`/game_integration.md`](/game_integration.md) from schema version `2.0.0` to `2.2.0`.
 
-### Architectural Invariant:
-**The platform must not hardcode game-specific metadata, trophy definitions, or arbitrary icons.** Games must remain 100% autonomous, declarative, and self-contained. The platform's sole responsibility is to compile game manifests into the syndicated registry (`games.json`), enforce origin security boundaries, persist player records, and project generic UI dashboards.
+### 1.1. Architectural Invariant & Clean Trust Boundaries
 
----
-
-## 2. P-001 Baseline & What Changes in v2.1
-
-Under [P-001](/proposals/P-001-game-registry-spec-v2.md), WGCP adopted an F-Droid v2-inspired decoupled registry structure:
-1. **Repository Index (`games.json`)**: Split into `repo` (platform metadata, channels, mirrors) and `games.<id>` (individual titles).
-2. **Metadata & Releases Separation**: Separated marketing metadata (`metadata`) from deployable container workloads (`releases`).
-3. **Inline Localization**: Localized maps (e.g. `name: { "en-US": "...", "es-ES": "..." }`) with `en-US` as the mandatory fallback.
-
-### What v2.1 Adds to P-001:
-* **Declarative Achievements Manifest (`achievements`)**: Replaces static frontend dictionaries with versioned, localized achievement definitions in `game.yaml` compiled into `games.<id>.services.achievements`.
-* **Declarative Leaderboards Manifest (`leaderboards`)**: Defines scoring rules, sort orders (`asc` vs `desc`), display units, and reset epochs compiled into `games.<id>.services.leaderboards`.
-* **Schema Version Declaration (`specVersion: "2.1.0"`)**: Introduces explicit SemVer manifest validation during registration (`./platform.sh game add`).
-* **Complete Canonical Specification**: Unifies all properties of the platform registry into an exhaustive, normative property dictionary.
+1. **Zero Hardcoded Platform Metadata**: The platform must not hardcode game-specific metadata, trophy definitions, scoring mechanics, or arbitrary icons in frontend code. Games must remain 100% autonomous, declarative, and self-contained.
+2. **Division of Platform vs Game Responsibilities**:
+   * **Platform Responsibilities**:
+     * **Identity & Authentication**: Enforce that Player A can only submit scores for Player A's account.
+     * **Origin & Sandbox Isolation**: Guarantee that `2048.localhost` cannot submit scores/achievements on behalf of `supertux` or other games.
+     * **Storage & Transport Hygiene**: Enforce strict data types (finite numbers, max 2KB metadata payload limit) to protect the backend database from malformed data or DoS attacks.
+     * **Compilation, Indexing & Presentation**: Compile game manifests into `games.json`, calculate ranks, order results (`asc`/`desc`), and project spatial console UI dashboards.
+   * **Game Responsibilities**:
+     * **Gameplay Logic & Anti-Cheat**: Gameplay simulation, scoring formulas, physics calculations, and in-game anti-tamper are the exclusive domain of the game. The platform **must not** implement game-specific score velocity heuristics or guess whether a score is "physically plausible".
 
 ---
 
-## 3. The `game.yaml` Contract (v2.1.0 Example)
+## 2. P-001 Baseline & What Changes in v2.2
+
+Under [P-001](/proposals/P-001-game-registry-spec-v2.md), WGCP adopted an F-Droid v2-inspired decoupled registry structure (`repo` metadata, separated `metadata` and `releases` blocks, inline localization dictionaries).
+
+### What v2.2 Adds to P-001:
+* **Declarative Achievements Manifest (`achievements`)**: Versioned, localized achievement definitions in `game.yaml` compiled into `games.<id>.services.achievements`.
+* **Enhanced Leaderboards Manifest (`leaderboards`)**:
+  * **Categorical Grouping (`group`)**: Organizes multi-stage or multi-mode leaderboards (e.g. "World 1 Speedruns", "4x4 Classic Grid") for spatial console navigation.
+  * **Score Formatting & Precision (`scoreType`, `decimalPlaces`, `unitPosition`)**: Native support for precise speedrun times (`duration_ms` with millisecond decimals), formatted currencies, and prefix/suffix units.
+  * **Deterministic Tie-Breaking (`tieBreaker`)**: Explicit ordering (`first_achieved` vs `latest_achieved`) when player scores match.
+  * **Structured Metadata Schemas (`metadataSchema`)**: Declaratively defines custom score attributes (e.g. `moves: integer`, `character: string`) with automatic UI badge formatting and hard 2KB payload bounding.
+  * **Temporal Resets & Snapshot Archives (`resetSchedule`, `archivePolicy`)**: Precise cron-based tournament resets with historical top-100 snapshot archival.
+* **Schema Version Declaration (`specVersion: "2.2.0"`)**: Explicit SemVer manifest validation during registration (`./platform.sh game add`).
+
+---
+
+## 3. The `game.yaml` Contract (v2.2.0 Example)
 
 Every hosted game declares its metadata, runtime, and game services in its root `game.yaml`:
 
 ```yaml
 # Schema Version
-specVersion: "2.1.0"
+specVersion: "2.2.0"
 
 id: "2048"
 license: "MIT"
@@ -118,7 +128,7 @@ release:
       - "gamepad"
 
 # -----------------------------------------------------------------------------
-# 3. Game Services Manifest (New in v2.1.0)
+# 3. Declarative Game Services Manifest (v2.2.0)
 # -----------------------------------------------------------------------------
 achievements:
   - id: "tile_256"
@@ -150,26 +160,38 @@ leaderboards:
       en-US: "High Score"
       es-ES: "Puntuación Máxima"
     description:
-      en-US: "Highest points scored in a single session."
+      en-US: "Highest points scored in a single classic session."
+    group:
+      en-US: "Classic Mode"
+      es-ES: "Modo Clásico"
     sortOrder: "desc"                  # "desc" (higher is better) | "asc" (lower is better, e.g. time)
+    scoreType: "integer"               # "integer" | "decimal" | "duration_ms" | "currency"
     unit: "pts"                        # Suffix rendered beside scores
-    scoreFormat: "number"              # "number" | "duration_ms" | "currency"
-    aggregation: "max"                 # "max" | "min" | "latest"
+    unitPosition: "suffix"             # "suffix" | "prefix"
+    aggregation: "max"                 # "max" | "min" | "latest" | "sum"
+    tieBreaker: "first_achieved"       # "first_achieved" | "latest_achieved"
     version: 1                         # Monotonic integer epoch for rule/scoring updates
     resetPolicy: "never"               # "never" | "daily" | "weekly" | "seasonal"
+    metadataSchema:
+      moves:
+        type: "integer"
+        label:
+          en-US: "Moves"
+      highestTile:
+        type: "integer"
+        label:
+          en-US: "Highest Tile"
 ```
 
 ---
 
-## 4. Comprehensive Property Specifications for Registry v2.1
-
-This section serves as the complete, normative property reference for all keys supported in `game.yaml` and compiled into `games.json`.
+## 4. Comprehensive Property Specifications for Registry v2.2
 
 ### 4.1. `game.yaml` Top-Level & Metadata Properties
 
 | Property | Type | Required | Default / Fallback | Description |
 | :--- | :--- | :---: | :--- | :--- |
-| `specVersion` | `String` | No | `"2.1.0"` | SemVer specification version of the manifest format. |
+| `specVersion` | `String` | No | `"2.2.0"` | SemVer specification version of the manifest format. |
 | `id` | `String` | **Yes** | — | Unique lowercase alphanumeric slug identifying the game (e.g. `2048`, `hextris`, `adarkroom`, `supertux`). Must match regex `^[a-z0-9_-]+$`. |
 | `name` | `Dict` \| `String` | **Yes** | — | Localized display name. If provided as a string, mapped to `{"en-US": string}`. Key `en-US` is mandatory. |
 | `summary` | `Dict` \| `String` | No | `{"en-US": ""}` | Short one-line marketing synopsis displayed in console cards and catalog previews. |
@@ -217,25 +239,30 @@ This section serves as the complete, normative property reference for all keys s
 
 ---
 
-### 4.4. `game.yaml` Declarative Leaderboards Properties (`leaderboards[]`)
+### 4.4. `game.yaml` Enhanced Leaderboards Properties (`leaderboards[]`)
 
 | Property | Type | Required | Default / Fallback | Description |
 | :--- | :--- | :---: | :--- | :--- |
-| `id` | `String` | **Yes** | — | Unique leaderboard identifier within the game (e.g. `highScore`, `speedrun_any`). Matches regex `^[a-zA-Z0-9_-]+$`. |
+| `id` | `String` | **Yes** | — | Unique leaderboard identifier within the game (e.g. `highScore`, `speedrun_world1_level1`). Matches regex `^[a-zA-Z0-9_-]+$`. |
 | `name` | `Dict` \| `String` | **Yes** | — | Localized leaderboard display title. |
 | `description` | `Dict` \| `String` | No | `{"en-US": ""}` | Localized description of scoring criteria and rules. |
+| `group` | `Dict` \| `String` | No | `{"en-US": "General"}` | Localized grouping header for categorizing leaderboards into sets (e.g. "World 1 Speedruns", "Grid Sizes", "Difficulty"). |
 | `sortOrder` | `String` | No | `"desc"` | Sorting hierarchy: `"desc"` (higher score is better; arcade points) or `"asc"` (lower score is better; time trials / golf strokes). |
-| `unit` | `String` | No | `"pts"` | Formatted unit label suffix displayed adjacent to numerical scores (e.g. `"pts"`, `"s"`, `"moves"`, `"m"`). |
-| `scoreFormat` | `String` | No | `"number"` | Value formatter type: `"number"` (standard integer), `"duration_ms"` (converts to `HH:MM:SS.mmm`), or `"currency"` (`$1,234`). |
-| `aggregation` | `String` | No | `"max"` | Best-score aggregation rule: `"max"` (highest record kept), `"min"` (lowest record kept), or `"latest"` (most recent submission). |
-| `version` | `Integer` | No | `1` | Monotonic schema/scoring epoch integer. Incrementing resets competition without deleting legacy archive history. |
+| `scoreType` | `String` | No | `"integer"` | Data representation: `"integer"` (discrete points), `"decimal"` (floating points), `"duration_ms"` (elapsed milliseconds), or `"currency"`. |
+| `decimalPlaces` | `Integer` | No | `0` (or `3` for `duration_ms`) | Number of decimal places rendered in portal views (0 to 3). |
+| `unit` | `String` | No | `"pts"` | Formatted unit label displayed adjacent to numerical scores (e.g. `"pts"`, `"s"`, `"moves"`, `"$"`). |
+| `unitPosition` | `String` | No | `"suffix"` | Placement of unit symbol: `"suffix"` (`150 pts`, `42.5 s`) or `"prefix"` (`$ 500`). |
+| `aggregation` | `String` | No | `"max"` | Best-score aggregation rule: `"max"` (highest record kept), `"min"` (lowest record kept), `"latest"` (most recent submission), or `"sum"`. |
+| `tieBreaker` | `String` | No | `"first_achieved"` | Deterministic tie-breaker rule when scores match: `"first_achieved"` (earlier `updatedAt` wins) or `"latest_achieved"` (most recent wins). |
+| `version` | `Integer` | No | `1` | Monotonic schema/scoring epoch integer. Incrementing isolates competition epochs without deleting legacy archive history. |
 | `resetPolicy` | `String` | No | `"never"` | Recurrence cadence: `"never"`, `"daily"`, `"weekly"`, or `"seasonal"`. |
+| `resetSchedule` | `String (Cron)`| No | — | Optional 5-field UTC Cron expression defining exact reset trigger (e.g. `"0 0 * * 1"` for Mondays 00:00 UTC). |
+| `archivePolicy` | `String` | No | `"snapshot"` | Archival behavior upon reset: `"snapshot"` (persists top-100 historical snapshot) or `"purge"`. |
+| `metadataSchema` | `Dict` | No | `{}` | Dictionary defining allowed metadata attributes submitted with score (e.g., `moves: { type: "integer", label: { en-US: "Moves" } }`). Enforces max 2KB payload size. |
 
 ---
 
-### 4.5. Compiled Central Registry Index (`games.json` v2.1 Structure)
-
-The central catalog compiled by `./platform.sh game add` aggregates entries into the canonical structure:
+### 4.5. Compiled Central Registry Index (`games.json` v2.2 Structure)
 
 ```json
 {
@@ -311,13 +338,21 @@ The central catalog compiled by `./platform.sh game add` aggregates entries into
           {
             "id": "highScore",
             "name": { "en-US": "High Score", "es-ES": "Puntuación Máxima" },
-            "description": { "en-US": "Highest points scored in a single session." },
+            "description": { "en-US": "Highest points scored in a single classic session." },
+            "group": { "en-US": "Classic Mode", "es-ES": "Modo Clásico" },
             "sortOrder": "desc",
+            "scoreType": "integer",
+            "decimalPlaces": 0,
             "unit": "pts",
-            "scoreFormat": "number",
+            "unitPosition": "suffix",
             "aggregation": "max",
+            "tieBreaker": "first_achieved",
             "version": 1,
-            "resetPolicy": "never"
+            "resetPolicy": "never",
+            "metadataSchema": {
+              "moves": { "type": "integer", "label": { "en-US": "Moves" } },
+              "highestTile": { "type": "integer", "label": { "en-US": "Highest Tile" } }
+            }
           }
         ]
       }
@@ -339,7 +374,10 @@ await window.WGCP.achievements.increment('coins_100', 5);
 
 // 2. Leaderboards Submission
 await window.WGCP.leaderboards.submit(8192);
-await window.WGCP.leaderboards.submitTo('highScore', 8192, { moves: 420 });
+await window.WGCP.leaderboards.submitTo('highScore', 8192, {
+  moves: 420,
+  highestTile: 2048
+});
 ```
 
 ---
@@ -375,8 +413,8 @@ await window.WGCP.leaderboards.submitTo('highScore', 8192, { moves: 420 });
      * `sortOrder: "desc"`: Upsert if `newScore > existingScore`.
      * `sortOrder: "asc"`: Upsert if `newScore < existingScore`.
   3. **SQL Query**:
-     * `ORDER BY score ASC` for `asc` leaderboards (rank #1 is lowest value).
-     * `ORDER BY score DESC` for `desc` leaderboards (rank #1 is highest value).
+     * `ORDER BY score ASC, updated_at ASC` for `asc` leaderboards (rank #1 is lowest value; earlier timestamp breaks ties).
+     * `ORDER BY score DESC, updated_at ASC` for `desc` leaderboards (rank #1 is highest value; earlier timestamp breaks ties).
 
 ### Edge Case 5: Offline Play & Reconnection Queuing
 * **Scenario**: Player unlocks achievements while offline or on intermittent connectivity.
@@ -403,8 +441,9 @@ await window.WGCP.leaderboards.submitTo('highScore', 8192, { moves: 420 });
 
 ## 7. Migration Plan & P-001 Supersession Steps
 
-1. **Formal Acceptance**: Ratify P-006 via decision record `D-009-accept-declarative-services-spec-v2-1.md`, formally marking P-001 as `superseded`.
-2. **Contract Update**: Update [`/game_integration.md`](/game_integration.md) to codify the v2.1.0 schema with the comprehensive property tables.
+1. **Formal Acceptance**: Ratify P-006 via decision record `D-009-accept-declarative-services-spec-v2-2.md`, formally marking P-001 as `superseded`.
+2. **Contract Update**: Update [`/game_integration.md`](/game_integration.md) to codify the v2.2.0 schema with the comprehensive property tables.
 3. **Testbed Manifest Updates**: Update `game.yaml` files across testbed games (`games/2048/game.yaml`, `games/hextris/game.yaml`, `games/adarkroom/game.yaml`, `games/BrowserQuest/game.yaml`, `games/supertux/game.yaml`).
 4. **Registration Compiler**: Update the registration script to parse and export `services` blocks into `platform/registry/games.json`.
-5. **Frontend Dynamic Ingestion**: Update portal views to read metadata directly from `/api/registry.json`, removing static platform dictionaries.
+5. **Backend Clean Boundaries Refactor**: Refactor `server.ts` to remove hardcoded gameplay anti-cheat heuristics, enforcing clean origin/user verification and 2KB payload bounding.
+6. **Frontend Dynamic Ingestion**: Update portal views to read metadata directly from `/api/registry.json`, grouping leaderboards by `group` and formatting score badges dynamically.
