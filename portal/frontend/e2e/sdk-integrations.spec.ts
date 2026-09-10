@@ -379,8 +379,50 @@ test.describe('WGCP SDK integrations E2E Tests', () => {
     await page.keyboard.press('Shift+Escape');
     await expect(systemMenu).toBeVisible({ timeout: 10000 });
 
+    // Dismiss permission modal if visible
+    const permissionModal = page.locator('[aria-label="Permission Request"]');
+    if (await permissionModal.isVisible()) {
+      await permissionModal.locator('button:has-text("Allow")').click();
+    }
+
     // Click Resume Game to dismiss overlay
     await systemMenu.click();
     await expect(systemMenu).not.toBeVisible();
+  });
+
+  test('Graceful Game Exit Handshake - WGCP_PREPARE_EXIT flushes pending saves on exit to library', async ({ page }) => {
+    test.setTimeout(90000);
+    await setupGame(page, '2048', '[data-focusable="play-2048"]');
+    const frame = await getFrame(page, /2048\.localhost/);
+
+    // 1. Stage a pending save state in localStorage without calling WGCP.storage.save directly
+    await frame.evaluate(() => {
+      window.localStorage.setItem('gameState', JSON.stringify({ score: 4096, over: false, won: true }));
+      window.localStorage.setItem('bestScore', '4096');
+    });
+
+    // 2. Open Escape menu
+    await frame.evaluate(() => {
+      window.focus();
+    });
+    await page.keyboard.press('Escape');
+    const exitBtn = page.locator('button:has-text("Exit to Library")');
+    await expect(exitBtn).toBeVisible({ timeout: 10000 });
+
+    // 3. Intercept the save request triggered during graceful exit handshake
+    const savePromise = page.waitForResponse(
+      (resp) => resp.url().includes('/saves/gameState') && resp.request().method() === 'POST',
+      { timeout: 15000 }
+    );
+
+    // 4. Click Exit to Library
+    await exitBtn.click();
+
+    // 5. Verify the backend received the flushed save state from the onPrepareExit handler
+    const saveResponse = await savePromise;
+    expect(saveResponse.status()).toBe(200);
+
+    // 6. Verify we returned to the library
+    await expect(page.locator('h2:has-text("My Game Library")')).toBeVisible({ timeout: 15000 });
   });
 });

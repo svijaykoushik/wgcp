@@ -1,5 +1,8 @@
 # Findings Update Log
 
+## 2026-09-11
+* **Creation**: Added [`F-005-supertux-wasm-unload-cloud-sync-failure.md`](/findings/F-005-supertux-wasm-unload-cloud-sync-failure.md) documenting the SuperTux WASM unload save state drop and cloud synchronization failure.
+
 ## 2026-09-10
 * **Creation**: Added [`F-001-incremental-achievement-progress-scaling.md`](/findings/F-001-incremental-achievement-progress-scaling.md) documenting the broken backend achievement percentage scaling bug.
 * **Creation**: Added [`F-002-hardcoded-anti-cheat-heuristic-boundary.md`](/findings/F-002-hardcoded-anti-cheat-heuristic-boundary.md) documenting the hardcoded anti-cheat rate-of-play check violating platform invariants.

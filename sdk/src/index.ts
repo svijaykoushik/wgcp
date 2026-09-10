@@ -36,7 +36,8 @@ const systemListeners = {
   onPause: [] as (() => void)[],
   onResume: [] as ((ctx: { pausedDurationMs: number; resumeTimestamp: number }) => void)[],
   onSettingsChanged: [] as ((settings: any) => void)[],
-  onPlayerChanged: [] as ((player: any) => void)[]
+  onPlayerChanged: [] as ((player: any) => void)[],
+  onPrepareExit: [] as (() => Promise<any> | any)[]
 };
 
 // Default system settings
@@ -165,6 +166,40 @@ function handlePortalMessage(event: MessageEvent) {
 
   if (type === 'WGCP_STATS_ACK') {
     handleStatsACK(id);
+    return;
+  }
+
+  if (type === 'WGCP_PREPARE_EXIT') {
+    const exitPromises: Promise<any>[] = [];
+
+    // Flush active WASM bridge if attached
+    const wasmBridge = (window as any)._activeWasmBridge;
+    if (wasmBridge && typeof wasmBridge.flush === 'function') {
+      exitPromises.push(wasmBridge.flush());
+    }
+
+    // Execute registered exit listeners
+    systemListeners.onPrepareExit.forEach((cb) => {
+      try {
+        exitPromises.push(Promise.resolve(cb()));
+      } catch (e) {
+        console.warn('[WGCP SDK] PrepareExit listener error:', e);
+      }
+    });
+
+    Promise.allSettled(exitPromises).then((results) => {
+      const hasError = results.some((r) => r.status === 'rejected');
+      window.parent.postMessage({
+        id,
+        type: 'WGCP_PREPARE_EXIT_ACK',
+        source: 'WGCP_SDK',
+        version: '2.0.0',
+        payload: {
+          flushed: !hasError,
+          error: hasError ? 'One or more storage flushes failed' : undefined
+        }
+      }, portalOrigin);
+    });
     return;
   }
 
@@ -377,6 +412,9 @@ const WGCP = {
     },
     onResume: function(callback: (ctx: any) => void) {
       systemListeners.onResume.push(callback);
+    },
+    onPrepareExit: function(callback: () => Promise<any> | any) {
+      systemListeners.onPrepareExit.push(callback);
     }
   },
 

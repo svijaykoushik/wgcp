@@ -437,7 +437,15 @@ export function createWasmStorageBridge(options: WasmStorageOptions): WasmStorag
       return resolvedOptions;
     },
     attach,
-    detach,
+    detach: function() {
+      detach();
+      if (activeWasmBridge === bridge) {
+        activeWasmBridge = null;
+        if (typeof window !== "undefined") {
+          delete (window as any)._activeWasmBridge;
+        }
+      }
+    },
     saveNow,
     restoreFromCloud,
     flush,
@@ -445,12 +453,23 @@ export function createWasmStorageBridge(options: WasmStorageOptions): WasmStorag
     restoreFiles
   };
 
+  activeWasmBridge = bridge;
+  if (typeof window !== "undefined") {
+    (window as any)._activeWasmBridge = bridge;
+  }
+
   // Auto-attach if FS or IDBFS was provided
   if (resolvedOptions.fs || resolvedOptions.idbfs) {
     attach();
   }
 
   return bridge;
+}
+
+let activeWasmBridge: WasmStorageBridge | null = null;
+
+export function getActiveWasmBridge(): WasmStorageBridge | null {
+  return activeWasmBridge;
 }
 
 /**
@@ -464,5 +483,6 @@ export function installWasmBridge(options: WasmStorageOptions): WasmStorageBridg
 
 export const wasmAPI = {
   createBridge: createWasmStorageBridge,
-  install: installWasmBridge
+  install: installWasmBridge,
+  getActiveBridge: getActiveWasmBridge
 };

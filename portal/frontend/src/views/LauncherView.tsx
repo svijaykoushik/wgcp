@@ -610,6 +610,61 @@ export function LauncherView({ game, onExit }: LauncherViewProps) {
     focusTimersRef.current = [];
     setIsOverlayOpen(false);
 
+    let expectedGameOrigin = 'http://localhost';
+    try {
+      expectedGameOrigin = new URL(resolveGameUrl(game)).origin;
+    } catch (e) {
+      console.warn('Invalid game URL/origin:', e);
+    }
+
+    const iframe = iframeRef.current;
+    if (iframe && iframe.contentWindow) {
+      const correlationId = (function() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+          try { return crypto.randomUUID(); } catch(e) {}
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      })();
+
+      await new Promise<void>((resolve) => {
+        const timeoutId = window.setTimeout(() => {
+          window.removeEventListener('message', handleExitAck);
+          resolve();
+        }, 600);
+
+        function handleExitAck(event: MessageEvent) {
+          if (
+            event.data &&
+            event.data.type === 'WGCP_PREPARE_EXIT_ACK' &&
+            event.data.id === correlationId
+          ) {
+            window.clearTimeout(timeoutId);
+            window.removeEventListener('message', handleExitAck);
+            resolve();
+          }
+        }
+
+        window.addEventListener('message', handleExitAck);
+
+        try {
+          iframe.contentWindow!.postMessage({
+            id: correlationId,
+            type: 'WGCP_PREPARE_EXIT',
+            source: 'WGCP_PORTAL',
+            version: '2.0.0',
+            payload: { timeoutMs: 600 }
+          }, expectedGameOrigin);
+        } catch(e) {
+          window.clearTimeout(timeoutId);
+          window.removeEventListener('message', handleExitAck);
+          resolve();
+        }
+      });
+    }
+
     // Exit browser fullscreen
     const isFs = !!(
       document.fullscreenElement ||

@@ -1,5 +1,8 @@
 # Decisions Update Log
 
+## 2026-09-11
+* **Creation**: Added decision [`D-009-graceful-game-exit-handshake.md`](/decisions/D-009-graceful-game-exit-handshake.md) adopting the `WGCP_PREPARE_EXIT` and `WGCP_PREPARE_EXIT_ACK` teardown handshake to eliminate asynchronous save drops during iframe unmounts.
+
 ## 2026-09-03
 * **Creation**: Added decision [`D-008-configurable-sdk-init-and-escape-handling.md`](/decisions/D-008-configurable-sdk-init-and-escape-handling.md) adopting `WGCPInitOptions` (`captureEscape: false`) and `Shift+Escape` chord handling to resolve Escape key collisions with native in-game pause menus.
 

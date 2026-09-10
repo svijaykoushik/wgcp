@@ -1,5 +1,9 @@
 # Directory Update Log
 
+## 2026-09-11
+* **Decision**: Adopted decision [`D-009-graceful-game-exit-handshake.md`](/decisions/D-009-graceful-game-exit-handshake.md) and accepted proposal [`P-007-graceful-game-exit-handshake-protocol.md`](/proposals/P-007-graceful-game-exit-handshake-protocol.md) specifying the `WGCP_PREPARE_EXIT` / `WGCP_PREPARE_EXIT_ACK` teardown handshake to eliminate save loss during iframe unmounts.
+* **Investigation & Finding**: Authored investigation [`I-013-supertux-unload-save-sync-failure.md`](/investigations/I-013-supertux-unload-save-sync-failure.md) and finding [`F-005-supertux-wasm-unload-cloud-sync-failure.md`](/findings/F-005-supertux-wasm-unload-cloud-sync-failure.md) diagnosing why SuperTux saves fail to persist and trigger cloud synchronization during iframe unload (asynchronous Promise cutoff, incomplete VFS flush, and lack of pre-exit portal handshake).
+
 ## 2026-09-07
 * **Proposal**: Authored [`P-006-declarative-achievements-leaderboards-schema.md`](/proposals/P-006-declarative-achievements-leaderboards-schema.md) specifying versioned declarative `achievements` and `leaderboards` manifests in `game.yaml` (v2.1.0), client submission protocols, and in-depth edge-case resolution (version drift, scale changes, inverted sorting, offline queuing, cross-origin assets, and dynamic fallback).
 * **Milestone**: Completed **Phase 6: Portal Services UI & Dashboards** ([`roadmap.md`](/roadmap.md)). Implemented Achievements Showcase ([`AchievementsView.tsx`](/portal/frontend/src/views/AchievementsView.tsx)), Global Leaderboard Explorer ([`LeaderboardsView.tsx`](/portal/frontend/src/views/LeaderboardsView.tsx)), and Player Profile & Progression ([`ProfileView.tsx`](/portal/frontend/src/views/ProfileView.tsx)) with 100% spatial gamepad/keyboard navigation and E2E test coverage (`dashboards.spec.ts`).

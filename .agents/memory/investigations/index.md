@@ -16,3 +16,5 @@ This directory holds diagnostics, debugging trails, and active issue investigati
 * [Viewport-First Launch Escape Key Regression](I-010-viewport-escape-regression.md) - Diagnostic report into why the Escape key fails to open the system menu overlay on initial game launch under the viewport-first windowed model.
 * [SuperTux WASM Docker Build Optimization & Decoupling](I-011-supertux-wasm-docker-build-optimization.md) - Diagnostic analysis of the SuperTux Docker build pipeline to bypass redundant C++ WASM compilation during HTML/SDK template updates.
 * [Game Services Implementation Bugs & Operational Audit](I-012-game-services-implementation-gaps-and-bugs.md) - Diagnostic report cataloging active codebase defects (maxSteps percentage formula, hardcoded anti-cheat, missing composite indexes, static frontend fallbacks) and operational tasks required for Registry v2.2.
+* [SuperTux Unload Save & Cloud Synchronization Failure](I-013-supertux-unload-save-sync-failure.md) - Diagnostic report into why SuperTux game saves do not save correctly and fail to trigger cloud synchronization when the game unloads.
+

@@ -1,5 +1,8 @@
 # Proposals Update Log
 
+## 2026-09-11
+* **Creation & Acceptance**: Added proposal [`P-007-graceful-game-exit-handshake-protocol.md`](/proposals/P-007-graceful-game-exit-handshake-protocol.md) specifying the `WGCP_PREPARE_EXIT` and `WGCP_PREPARE_EXIT_ACK` teardown handshake to eliminate asynchronous save drops during iframe unmounts. Approved and marked `accepted`.
+
 ## 2026-09-03
 * **Creation & Acceptance**: Added proposal [`P-005-configurable-sdk-initialization-and-escape-forwarding.md`](/proposals/P-005-configurable-sdk-initialization-and-escape-forwarding.md) proposing `WGCPInitOptions` (`allowedOrigins`, `captureEscape`, `menuShortcut`) to allow games with native pause menus to bypass raw `Escape` interception while maintaining `Shift+Escape` for console menu overlay toggling. Approved and marked `accepted`.
 

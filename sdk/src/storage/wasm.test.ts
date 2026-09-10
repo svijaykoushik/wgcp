@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   createWasmStorageBridge,
   installWasmBridge,
+  getActiveWasmBridge,
+  wasmAPI,
   uint8ArrayToBase64,
   base64ToUint8Array,
   WasmFileTree,
@@ -415,6 +417,62 @@ describe("WASM & Emscripten Storage Bridge", () => {
 
       expect(idbfsCalled).toBe(true);
       expect(storage.save).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Active Bridge Registration & Teardown Handshake", () => {
+    beforeEach(() => {
+      getActiveWasmBridge()?.detach();
+    });
+
+    it("should register and deregister active WASM bridge instance", () => {
+      const fs = createMockFS();
+      const storage = createMockStorage();
+      const mount = "/home/web_user/.local/share/supertux2";
+
+      expect(getActiveWasmBridge()).toBeNull();
+
+      const bridge = installWasmBridge({
+        mountPath: mount,
+        fs,
+        storage
+      });
+
+      expect(wasmAPI.getActiveBridge()).toBe(bridge);
+
+      bridge.detach();
+      expect(wasmAPI.getActiveBridge()).toBeNull();
+    });
+
+    it("should flush in-flight debounced saves immediately on flush()", async () => {
+      const fs = createMockFS();
+      const storage = createMockStorage();
+      const mount = "/home/web_user/.local/share/supertux2";
+
+      const bridge = installWasmBridge({
+        mountPath: mount,
+        fs,
+        storage,
+        debounceMs: 5000 // High debounce
+      });
+
+      fs.writeFile(`${mount}/save.dat`, "level progress data");
+
+      // Trigger syncfs which queues 5000ms debounce
+      await new Promise<void>((resolve) => fs.syncfs(false, () => resolve()));
+      expect(storage.save).toHaveBeenCalledTimes(0);
+
+      // Now call flush() (as done during WGCP_PREPARE_EXIT)
+      await bridge.flush();
+      expect(storage.save).toHaveBeenCalledTimes(1);
+
+      const savedJson = storage.saves.get("gameState");
+      expect(savedJson).toBeDefined();
+      const parsed = JSON.parse(savedJson!);
+      expect(parsed.files["save.dat"]).toBeDefined();
+      expect(new TextDecoder().decode(base64ToUint8Array(parsed.files["save.dat"].data))).toBe("level progress data");
+
+      bridge.detach();
     });
   });
 });

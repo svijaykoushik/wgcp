@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-09-11
+* **Creation**: Added [`I-013-supertux-unload-save-sync-failure.md`](/investigations/I-013-supertux-unload-save-sync-failure.md) detailing the diagnostics into why SuperTux game saves do not save correctly and fail to trigger cloud synchronization during game unload.
+
 ## 2026-09-10
 * **Creation**: Added [`I-012-game-services-implementation-gaps-and-bugs.md`](/investigations/I-012-game-services-implementation-gaps-and-bugs.md) documenting active codebase bugs (maxSteps percentage formula, hardcoded anti-cheat, missing composite indexes, static frontend fallbacks) and operational tasks required for Registry v2.2.
 
