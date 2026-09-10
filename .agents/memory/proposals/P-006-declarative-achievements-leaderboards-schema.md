@@ -2,9 +2,9 @@
 type: Proposal
 proposal_id: P-006
 title: Declarative Game Services Schema (Achievements & Leaderboards) for game.yaml and Registry v2.2
-description: Formal specification proposal extending and superseding P-001 (Game Registry Specification v2) upon acceptance, codifying versioned declarative achievements, enhanced multi-dimensional leaderboards in game.yaml and games.json, clean platform-vs-game trust boundaries, and operational lifecycle edge cases.
+description: Formal specification proposal extending and superseding P-001 (Game Registry Specification v2) upon acceptance, codifying versioned declarative achievements, enhanced multi-dimensional leaderboards in game.yaml and games.json, clean platform-vs-game trust boundaries, atomic batch unlocks, secret trophy masking, around-player windowing, and operational lifecycle edge cases.
 status: proposed
-generated: { by: antigravity/3.7, at: 2026-09-10T22:50:00+05:30 }
+generated: { by: antigravity/3.7, at: 2026-09-10T23:05:00+05:30 }
 sources:
   - id: p001-registry
     resource: /proposals/P-001-game-registry-spec-v2.md
@@ -24,6 +24,9 @@ sources:
   - id: d006-invariants
     resource: /decisions/D-006-epoch-timestamp-and-sdk-invariants.md
     title: BigInt Timestamps, SDK Feature Centralization, and Test Isolation
+  - id: i012-services-audit
+    resource: /investigations/I-012-game-services-implementation-gaps-and-bugs.md
+    title: Game Services Implementation Bugs & Operational Audit
 supersedes:
   - id: p001-registry
     resource: /proposals/P-001-game-registry-spec-v2.md
@@ -65,6 +68,10 @@ Under [P-001](/proposals/P-001-game-registry-spec-v2.md), WGCP adopted an F-Droi
   * **Deterministic Tie-Breaking (`tieBreaker`)**: Explicit ordering (`first_achieved` vs `latest_achieved`) when player scores match.
   * **Structured Metadata Schemas (`metadataSchema`)**: Declaratively defines custom score attributes (e.g. `moves: integer`, `character: string`) with automatic UI badge formatting and hard 2KB payload bounding.
   * **Temporal Resets & Snapshot Archives (`resetSchedule`, `archivePolicy`)**: Precise cron-based tournament resets with historical top-100 snapshot archival.
+* **Secret Trophy Masking Protocol**: Locked hidden achievements (`hidden: true`) are masked across client SDK queries until unlocked.
+* **Around-Player Rank Windowing**: Standardized rank-centering queries for global leaderboards.
+* **Atomic Burst Unlock Envelope (`unlockBatch`)**: Batch unlock endpoint preventing connection churn during multi-achievement frames.
+* **Guest-to-User State Migration Protocol**: Automatic promotion of cached offline/guest records upon player login.
 * **Schema Version Declaration (`specVersion: "2.2.0"`)**: Explicit SemVer manifest validation during registration (`./platform.sh game add`).
 
 ---
@@ -151,8 +158,22 @@ achievements:
     description:
       en-US: "Reach the ultimate 2048 victory tile!"
     icon: "🏆"
+    category: "Progression"
+    hidden: false
     maxSteps: 1
     points: 50
+
+  - id: "secret_easter_egg"
+    name:
+      en-US: "Master of Numbers"
+      es-ES: "Maestro de los Números"
+    description:
+      en-US: "Reach the 4096 tile in endless mode."
+    icon: "👑"
+    category: "Secret"
+    hidden: true                       # Secret achievement: masked until unlocked
+    maxSteps: 1
+    points: 100
 
 leaderboards:
   - id: "highScore"
@@ -166,6 +187,7 @@ leaderboards:
       es-ES: "Modo Clásico"
     sortOrder: "desc"                  # "desc" (higher is better) | "asc" (lower is better, e.g. time)
     scoreType: "integer"               # "integer" | "decimal" | "duration_ms" | "currency"
+    decimalPlaces: 0
     unit: "pts"                        # Suffix rendered beside scores
     unitPosition: "suffix"             # "suffix" | "prefix"
     aggregation: "max"                 # "max" | "min" | "latest" | "sum"
@@ -332,6 +354,16 @@ leaderboards:
             "hidden": false,
             "maxSteps": 1,
             "points": 50
+          },
+          {
+            "id": "secret_easter_egg",
+            "name": { "en-US": "Master of Numbers", "es-ES": "Maestro de los Números" },
+            "description": { "en-US": "Reach the 4096 tile in endless mode." },
+            "icon": "👑",
+            "category": "Secret",
+            "hidden": true,
+            "maxSteps": 1,
+            "points": 100
           }
         ],
         "leaderboards": [
@@ -363,22 +395,76 @@ leaderboards:
 
 ---
 
-## 5. Client Submission Contracts (Game SDK)
+## 5. Client Submission Contracts & API Protocols
 
-Games submit events through the standalone Game SDK (`wgcp-sdk.js`):
-
+### 5.1. Achievements API & Secret Masking
 ```typescript
-// 1. Achievements Triggering
+// 1. Single Unlock / Increment
 await window.WGCP.achievements.unlock('tile_2048');
 await window.WGCP.achievements.increment('coins_100', 5);
 
-// 2. Leaderboards Submission
+// 2. Atomic Multi-Unlock Batch (Burst unlocks in single frame)
+await window.WGCP.achievements.unlockBatch(['boss_killed', 'speedrun_gold', 'game_clear']);
+```
+
+#### Secret Trophy Masking Protocol (`hidden: true`):
+* When querying `/api/v1/games/:gameId/achievements` or `WGCP.achievements.getProgress()`:
+  * If `unlocked === false` and `hidden === true`:
+    ```json
+    {
+      "id": "secret_easter_egg",
+      "title": "Hidden Trophy",
+      "description": "Details will be revealed once unlocked.",
+      "icon": "🔒",
+      "category": "Secret",
+      "unlocked": false,
+      "percentComplete": 0
+    }
+    ```
+  * Once `unlocked === true`, the API returns the unmasked localized title, description, and custom trophy icon.
+
+#### Incremental Progress Calculation:
+The backend evaluates progress using the declared `maxSteps`:
+$$\text{percentComplete} = \min\left(100, \left\lfloor \frac{\text{currentSteps}}{\text{maxSteps}} \times 100 \right\rfloor\right)$$
+
+---
+
+### 5.2. Leaderboards Submission & Around-Player Windowing
+
+```typescript
+// 1. Leaderboards Submission
 await window.WGCP.leaderboards.submit(8192);
 await window.WGCP.leaderboards.submitTo('highScore', 8192, {
   moves: 420,
   highestTile: 2048
 });
+
+// 2. Around-Player Leaderboard Query
+const entries = await window.WGCP.leaderboards.getScores('highScore', {
+  aroundPlayer: true,
+  limit: 10
+});
 ```
+
+#### Around-Player Rank Centering Algorithm:
+When `aroundPlayer: true` is requested:
+1. The backend locates the active player's score record $S_{\text{user}}$.
+2. Calculates user rank $R$:
+   - For `sortOrder: "desc"`: $R = 1 + \text{COUNT}(*) \text{ WHERE score} > S_{\text{user}} \text{ OR } (\text{score} = S_{\text{user}} \text{ AND } \text{updatedAt} < T_{\text{user}})$.
+   - For `sortOrder: "asc"`: $R = 1 + \text{COUNT}(*) \text{ WHERE score} < S_{\text{user}} \text{ OR } (\text{score} = S_{\text{user}} \text{ AND } \text{updatedAt} < T_{\text{user}})$.
+3. Computes window start: $\text{offset} = \max\left(0, R - \left\lfloor \frac{\text{limit}}{2} \right\rfloor\right)$.
+4. Returns the centered slice with computed 1-based ranks.
+
+---
+
+### 5.3. Guest-to-User State Migration Protocol
+
+When a player plays in guest mode and later registers or signs in:
+1. The SDK preserves guest personal bests and unlocked achievements in IndexedDB (`wgcp_guest_state`).
+2. Upon receiving `onPlayerChanged` (guest $\rightarrow$ authenticated user), the SDK automatically issues:
+   `POST /api/v1/games/:gameId/migrate-guest`
+   with the cached unlock list and score payloads.
+3. The backend reconciles the payload using `ON CONFLICT DO NOTHING` for achievements and personal best upsert logic for leaderboards, ensuring guest progress is promoted without overwriting higher authenticated records.
 
 ---
 
@@ -443,7 +529,11 @@ await window.WGCP.leaderboards.submitTo('highScore', 8192, {
 
 1. **Formal Acceptance**: Ratify P-006 via decision record `D-009-accept-declarative-services-spec-v2-2.md`, formally marking P-001 as `superseded`.
 2. **Contract Update**: Update [`/game_integration.md`](/game_integration.md) to codify the v2.2.0 schema with the comprehensive property tables.
-3. **Testbed Manifest Updates**: Update `game.yaml` files across testbed games (`games/2048/game.yaml`, `games/hextris/game.yaml`, `games/adarkroom/game.yaml`, `games/BrowserQuest/game.yaml`, `games/supertux/game.yaml`).
-4. **Registration Compiler**: Update the registration script to parse and export `services` blocks into `platform/registry/games.json`.
-5. **Backend Clean Boundaries Refactor**: Refactor `server.ts` to remove hardcoded gameplay anti-cheat heuristics, enforcing clean origin/user verification and 2KB payload bounding.
-6. **Frontend Dynamic Ingestion**: Update portal views to read metadata directly from `/api/registry.json`, grouping leaderboards by `group` and formatting score badges dynamically.
+3. **Database Schema & Indexing**: Update `portal/backend/src/schema.ts` to add composite B-tree indexes on `(gameId, leaderboardId, score, updatedAt)`.
+4. **Backend Implementation**:
+   - Refactor `server.ts` to scale `increment` by manifest `maxSteps`.
+   - Implement `aroundPlayer` rank windowing and batch unlock endpoints.
+   - Remove hardcoded anti-cheat heuristics (`maxPossiblePointsPerSec`).
+5. **Registration Compiler**: Update `platform/scripts/register-game.sh` to validate `specVersion: "2.2.0"` and compile `services` into `platform/registry/games.json`.
+6. **Testbed Manifest Population**: Populate `game.yaml` files across `games/2048`, `games/hextris`, `games/adarkroom`, `games/BrowserQuest`, `games/supertux`.
+7. **Frontend Dynamic Ingestion**: Update portal views (`AchievementsView.tsx`, `LeaderboardsView.tsx`) to consume dynamic registry data and eliminate static mocks.

@@ -1,5 +1,8 @@
 # Investigations Update Log
 
+## 2026-09-10
+* **Creation**: Added [`I-012-game-services-implementation-gaps-and-bugs.md`](/investigations/I-012-game-services-implementation-gaps-and-bugs.md) documenting active codebase bugs (maxSteps percentage formula, hardcoded anti-cheat, missing composite indexes, static frontend fallbacks) and operational tasks required for Registry v2.2.
+
 ## 2026-09-02
 * **Creation**: Added [`I-011-supertux-wasm-docker-build-optimization.md`](/investigations/I-011-supertux-wasm-docker-build-optimization.md) detailing the diagnostics and architectural decoupling solution to bypass redundant C++ WASM builds during SuperTux HTML template updates.
 
