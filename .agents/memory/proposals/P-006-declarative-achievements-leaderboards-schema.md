@@ -1,10 +1,10 @@
 ---
 type: Proposal
 proposal_id: P-006
-title: Declarative Game Services Schema (Achievements & Leaderboards) for game.yaml and Registry v2.2
-description: Formal specification proposal extending and superseding P-001 (Game Registry Specification v2) upon acceptance, codifying versioned declarative achievements, enhanced multi-dimensional leaderboards in game.yaml and games.json, clean platform-vs-game trust boundaries, atomic batch unlocks, secret trophy masking, around-player windowing, and operational lifecycle edge cases.
+title: Declarative Game Services Schema (Achievements & Leaderboards) for game.yaml and Registry v2.3
+description: Formal specification proposal extending and superseding P-001 (Game Registry Specification v2) upon acceptance, codifying versioned declarative achievements, enhanced multi-dimensional leaderboards in game.yaml and games.json, clean trust boundaries, comprehensive security hardening against XSS/DoS/prototype pollution, atomic batch unlocks, secret trophy masking, around-player windowing, and operational lifecycle edge cases.
 status: proposed
-generated: { by: antigravity/3.7, at: 2026-09-10T23:05:00+05:30 }
+generated: { by: antigravity/3.7, at: 2026-09-10T23:33:00+05:30 }
 sources:
   - id: p001-registry
     resource: /proposals/P-001-game-registry-spec-v2.md
@@ -33,14 +33,16 @@ supersedes:
     title: Game Registry Specification (v2)
 ---
 
-# Proposal (P-006) - Declarative Game Services Schema for `game.yaml` and Registry v2.2
+# Proposal (P-006) - Declarative Game Services Schema for `game.yaml` and Registry v2.3
 
 ## 1. Executive Summary & Supersession Notice
 
-This proposal defines the **Game Registry Specification (v2.2)** and the declarative contract for **Game Services (Achievements and Leaderboards)** in `game.yaml`.
+This proposal defines the **Game Registry Specification (v2.3)** and the declarative contract for **Game Services (Achievements and Leaderboards)** in `game.yaml`.
 
 > [!IMPORTANT]
-> **Supersession Notice:** Upon formal ratification and acceptance, this specification will **supersede Proposal [P-001: Game Registry Specification (v2)](/proposals/P-001-game-registry-spec-v2.md)** and update the canonical integration contract [`/game_integration.md`](/game_integration.md) from schema version `2.0.0` to `2.2.0`.
+> **Supersession Notice:** Upon formal ratification and acceptance, this specification will **supersede Proposal [P-001: Game Registry Specification (v2)](/proposals/P-001-game-registry-spec-v2.md)** and update the canonical integration contract [`/game_integration.md`](/game_integration.md) from schema version `2.0.0` to `2.3.0`.
+
+---
 
 ### 1.1. Architectural Invariant & Clean Trust Boundaries
 
@@ -56,11 +58,31 @@ This proposal defines the **Game Registry Specification (v2.2)** and the declara
 
 ---
 
-## 2. P-001 Baseline & What Changes in v2.2
+### 1.2. Security Invariants & Threat Protections (v2.3 Hardening)
+
+* **SEC-01: Manifest Injection & XSS Immunity**:
+  * All manifest string fields (`name`, `summary`, `description`) are treated as plain text strings, never rendered through HTML sinks or `dangerouslySetInnerHTML`.
+  * `icon` fields are strictly validated during registration: must be either a single Unicode emoji/grapheme ($\le 4$ codepoints) or a relative path matching regex `^[a-zA-Z0-9_\-\/]+\.(png|jpg|jpeg|svg|webp)$`. Slashes and `..` traversal are strictly rejected.
+* **SEC-02: Path Traversal & Origin Confinement**:
+  * Relative asset URLs are resolved strictly against the game's canonical origin (`http://<game.hosting.hostname>/<path>`). Directory traversal sequences (`..`, `//`, `\`) and external scheme smuggling are blocked.
+* **SEC-03: Metadata DoS & Prototype Pollution Guard**:
+  * Leaderboard metadata payloads are bounded to a **2KB maximum byte-length** (`z.string().max(2048)`).
+  * Backend parsers strip prototype-polluting keys (`__proto__`, `constructor`, `prototype`) and restrict nesting depth to $\le 2$ with primitive values only.
+* **SEC-04: Session-Bound Guest State Migration**:
+  * The migration endpoint (`/api/v1/games/:gameId/migrate-guest`) derives identity strictly from server-side authenticated sessions, rejecting client-declared `userId`s to prevent account takeover.
+  * Score reconciliation enforces monotonic personal best checks (`ON CONFLICT DO UPDATE WHERE new.score > existing.score` for desc).
+* **SEC-05: Cron Injection & Worker DoS Defense**:
+  * Leaderboard `resetSchedule` must adhere to standard 5-field UTC cron syntax with a mandatory minimum interval of **24 hours** (e.g. `@daily`, `@weekly`). Sub-daily cron schedules are rejected during registration.
+* **SEC-06: Bounded Idempotency Storage**:
+  * Backend transaction `txId` deduplication must use a bounded LRU cache (10,000 entries with a 24-hour TTL) or a PostgreSQL table with automated expiration, preventing memory exhaustion OOM crashes.
+
+---
+
+## 2. P-001 Baseline & What Changes in v2.3
 
 Under [P-001](/proposals/P-001-game-registry-spec-v2.md), WGCP adopted an F-Droid v2-inspired decoupled registry structure (`repo` metadata, separated `metadata` and `releases` blocks, inline localization dictionaries).
 
-### What v2.2 Adds to P-001:
+### What v2.3 Adds to P-001:
 * **Declarative Achievements Manifest (`achievements`)**: Versioned, localized achievement definitions in `game.yaml` compiled into `games.<id>.services.achievements`.
 * **Enhanced Leaderboards Manifest (`leaderboards`)**:
   * **Categorical Grouping (`group`)**: Organizes multi-stage or multi-mode leaderboards (e.g. "World 1 Speedruns", "4x4 Classic Grid") for spatial console navigation.
@@ -71,18 +93,18 @@ Under [P-001](/proposals/P-001-game-registry-spec-v2.md), WGCP adopted an F-Droi
 * **Secret Trophy Masking Protocol**: Locked hidden achievements (`hidden: true`) are masked across client SDK queries until unlocked.
 * **Around-Player Rank Windowing**: Standardized rank-centering queries for global leaderboards.
 * **Atomic Burst Unlock Envelope (`unlockBatch`)**: Batch unlock endpoint preventing connection churn during multi-achievement frames.
-* **Guest-to-User State Migration Protocol**: Automatic promotion of cached offline/guest records upon player login.
-* **Schema Version Declaration (`specVersion: "2.2.0"`)**: Explicit SemVer manifest validation during registration (`./platform.sh game add`).
+* **Comprehensive Security Hardening**: Strict XSS, path traversal, prototype pollution, and worker DoS mitigations.
+* **Schema Version Declaration (`specVersion: "2.3.0"`)**: Explicit SemVer manifest validation during registration (`./platform.sh game add`).
 
 ---
 
-## 3. The `game.yaml` Contract (v2.2.0 Example)
+## 3. The `game.yaml` Contract (v2.3.0 Example)
 
 Every hosted game declares its metadata, runtime, and game services in its root `game.yaml`:
 
 ```yaml
 # Schema Version
-specVersion: "2.2.0"
+specVersion: "2.3.0"
 
 id: "2048"
 license: "MIT"
@@ -135,7 +157,7 @@ release:
       - "gamepad"
 
 # -----------------------------------------------------------------------------
-# 3. Declarative Game Services Manifest (v2.2.0)
+# 3. Declarative Game Services Manifest (v2.3.0)
 # -----------------------------------------------------------------------------
 achievements:
   - id: "tile_256"
@@ -207,84 +229,84 @@ leaderboards:
 
 ---
 
-## 4. Comprehensive Property Specifications for Registry v2.2
+## 4. Comprehensive Property Specifications for Registry v2.3
 
 ### 4.1. `game.yaml` Top-Level & Metadata Properties
 
-| Property | Type | Required | Default / Fallback | Description |
+| Property | Type | Required | Default / Fallback | Validation & Security Constraints |
 | :--- | :--- | :---: | :--- | :--- |
-| `specVersion` | `String` | No | `"2.2.0"` | SemVer specification version of the manifest format. |
-| `id` | `String` | **Yes** | — | Unique lowercase alphanumeric slug identifying the game (e.g. `2048`, `hextris`, `adarkroom`, `supertux`). Must match regex `^[a-z0-9_-]+$`. |
-| `name` | `Dict` \| `String` | **Yes** | — | Localized display name. If provided as a string, mapped to `{"en-US": string}`. Key `en-US` is mandatory. |
-| `summary` | `Dict` \| `String` | No | `{"en-US": ""}` | Short one-line marketing synopsis displayed in console cards and catalog previews. |
-| `description` | `Dict` \| `String` | No | `{"en-US": ""}` | Full multi-paragraph gameplay description shown on game detail dialogs. |
-| `license` | `String` | No | `"Proprietary"` | Standard SPDX license identifier (e.g., `MIT`, `GPL-3.0-or-later`, `Apache-2.0`). |
-| `upstream` | `String (URI)` | No | — | Public URL to the game's upstream source code repository or homepage. |
-| `issueTracker` | `String (URI)` | No | — | URL to issue tracker for bug reporting and feedback. |
-| `developer` | `Dict` \| `String` | No | — | Author metadata. String maps to `{"name": string}`. Object supports `name: String` and `website: String (URI)`. |
-| `categories` | `Array<String>` | No | `[]` | List of platform classification genres (e.g., `["Puzzle", "Arcade", "MMORPG"]`). |
-| `multiplayer` | `Boolean` | No | `false` | Indicates whether the title supports local or networked multiplayer modes. |
-| `graphics.icon` | `Dict` \| `String` | No | `"🎮"` | Unicode emoji glyph or relative container asset path for catalog icons. |
-| `graphics.screenshots`| `Dict` | No | `{}` | Screenshots object containing device arrays (e.g. `desktop: [{ name: "assets/shot1.png" }]`). |
+| `specVersion` | `String` | No | `"2.3.0"` | SemVer specification version (`"2.3.0"`). |
+| `id` | `String` | **Yes** | — | Unique lowercase alphanumeric slug (`^[a-z0-9_-]+$`). |
+| `name` | `Dict` \| `String` | **Yes** | — | Localized display name. Plain text string, HTML tags stripped. Mandatory `en-US` key. |
+| `summary` | `Dict` \| `String` | No | `{"en-US": ""}` | Short one-line marketing synopsis. Plain text. |
+| `description` | `Dict` \| `String` | No | `{"en-US": ""}` | Full gameplay description. Plain text. |
+| `license` | `String` | No | `"Proprietary"` | Standard SPDX license identifier (e.g., `MIT`, `GPL-3.0-or-later`). |
+| `upstream` | `String (URI)` | No | — | Public URL to repository (must start with `http://` or `https://`). |
+| `issueTracker` | `String (URI)` | No | — | URL to issue tracker. |
+| `developer` | `Dict` \| `String` | No | — | Author metadata (`name: String`, `website: String (URI)`). |
+| `categories` | `Array<String>` | No | `[]` | List of platform classification genres. |
+| `multiplayer` | `Boolean` | No | `false` | Indicates whether the title supports multiplayer modes. |
+| `graphics.icon` | `Dict` \| `String` | No | `"🎮"` | Unicode emoji ($\le 4$ codepoints) or relative path (`^[a-zA-Z0-9_\-\/]+\.(png\|jpg\|jpeg\|svg\|webp)$`). |
+| `graphics.screenshots`| `Dict` | No | `{}` | Screenshots object (`desktop: [{ name: "assets/shot1.png" }]`). Paths must be relative without `..`. |
 
 ---
 
 ### 4.2. `game.yaml` Release & Runtime Properties (`release.*`)
 
-| Property | Type | Required | Default / Fallback | Description |
+| Property | Type | Required | Default / Fallback | Validation & Security Constraints |
 | :--- | :--- | :---: | :--- | :--- |
-| `release.version` | `String` | **Yes** | — | SemVer release version of the game workload (e.g., `"1.0.0"`). |
-| `release.channel` | `String` | **Yes** | `"stable"` | Target deployment channel (e.g., `"stable"`, `"beta"`, `"nightly"`). |
-| `release.whatsNew` | `Dict` \| `String` | No | `{"en-US": ""}` | Localized changelog highlights for this release. |
+| `release.version` | `String` | **Yes** | — | SemVer release version of the workload (e.g. `"1.0.0"`). |
+| `release.channel` | `String` | **Yes** | `"stable"` | Target deployment channel (`"stable"`, `"beta"`, `"nightly"`). |
+| `release.whatsNew` | `Dict` \| `String` | No | `{"en-US": ""}` | Localized changelog highlights. Plain text. |
 | `release.runtime.type` | `String` | **Yes** | `"docker"` | Orchestration execution environment type (`"docker"`). |
-| `release.runtime.service` | `String` | **Yes** | — | Exact Docker Compose service name corresponding to the workload (e.g., `"game-2048"`). |
+| `release.runtime.service` | `String` | **Yes** | — | Exact Compose service name corresponding to the workload. |
 | `release.runtime.port` | `Integer` | **Yes** | `80` | Internal container port exposing the HTTP server. |
-| `release.runtime.image` | `String` | No | — | Explicit container image tag (optional if built dynamically via Compose). |
-| `release.hosting.hostname` | `String` | **Yes** | — | Local domain routed by Caddy reverse proxy (e.g., `"2048.localhost"`). |
-| `release.hosting.capabilities`| `Array<String>` | No | Default baseline | Browser API permissions requested for the iframe `allow` attribute (e.g. `["gamepad", "autoplay"]`). |
-| `release.hosting.websockets` | `Boolean` | No | `false` | Enables WebSocket proxy forwarding support in Caddy configuration. |
+| `release.runtime.image` | `String` | No | — | Explicit container image tag. |
+| `release.hosting.hostname` | `String` | **Yes** | — | Local domain routed by Caddy (e.g. `"2048.localhost"`). Must match regex `^[a-z0-9_-]+\.localhost$`. |
+| `release.hosting.capabilities`| `Array<String>` | No | Default baseline | Browser API permissions for iframe `allow` attribute. |
+| `release.hosting.websockets` | `Boolean` | No | `false` | Enables WebSocket proxy forwarding support in Caddy. |
 
 ---
 
 ### 4.3. `game.yaml` Declarative Achievements Properties (`achievements[]`)
 
-| Property | Type | Required | Default / Fallback | Description |
+| Property | Type | Required | Default / Fallback | Validation & Security Constraints |
 | :--- | :--- | :---: | :--- | :--- |
-| `id` | `String` | **Yes** | — | Unique identifier for the achievement within the game (e.g. `tile_2048`, `fire_stoked`). Matches regex `^[a-zA-Z0-9_-]+$`. |
-| `name` | `Dict` \| `String` | **Yes** | — | Localized achievement title. String auto-promotes to `{"en-US": string}`. |
-| `description` | `Dict` \| `String` | **Yes** | — | Localized description of the unlock criteria or lore snippet. |
-| `icon` | `String` | No | `"🏆"` | Unicode emoji glyph or relative container asset path (e.g. `assets/icons/trophy.png`). |
+| `id` | `String` | **Yes** | — | Unique identifier matching regex `^[a-zA-Z0-9_-]+$`. |
+| `name` | `Dict` \| `String` | **Yes** | — | Localized achievement title. Plain text string. |
+| `description` | `Dict` \| `String` | **Yes** | — | Localized unlock description. Plain text string. |
+| `icon` | `String` | No | `"🏆"` | Unicode emoji ($\le 4$ codepoints) or relative path (`^[a-zA-Z0-9_\-\/]+\.(png\|jpg\|jpeg\|svg\|webp)$`). |
 | `category` | `String` | No | `"General"` | Organizational badge/grouping (e.g., `"Progression"`, `"Secret"`, `"Mastery"`). |
-| `hidden` | `Boolean` | No | `false` | When `true`, title/description are masked with spoiler placeholders in the portal until unlocked by the user. |
-| `maxSteps` | `Integer` | No | `1` | Total step target for progression. `1` denotes binary single-trigger unlocks; `>1` enables progress bar tracking. |
-| `points` | `Integer` | No | `10` | Platform XP / Gamerscore credited to player account upon unlocking. |
+| `hidden` | `Boolean` | No | `false` | When `true`, title/description masked with spoiler placeholders until unlocked. |
+| `maxSteps` | `Integer` | No | `1` | Step target. Must be integer $\ge 1$. Progressive calculations scale proportionally. |
+| `points` | `Integer` | No | `10` | Platform XP value. Must be integer $\ge 0$. |
 
 ---
 
 ### 4.4. `game.yaml` Enhanced Leaderboards Properties (`leaderboards[]`)
 
-| Property | Type | Required | Default / Fallback | Description |
+| Property | Type | Required | Default / Fallback | Validation & Security Constraints |
 | :--- | :--- | :---: | :--- | :--- |
-| `id` | `String` | **Yes** | — | Unique leaderboard identifier within the game (e.g. `highScore`, `speedrun_world1_level1`). Matches regex `^[a-zA-Z0-9_-]+$`. |
-| `name` | `Dict` \| `String` | **Yes** | — | Localized leaderboard display title. |
-| `description` | `Dict` \| `String` | No | `{"en-US": ""}` | Localized description of scoring criteria and rules. |
-| `group` | `Dict` \| `String` | No | `{"en-US": "General"}` | Localized grouping header for categorizing leaderboards into sets (e.g. "World 1 Speedruns", "Grid Sizes", "Difficulty"). |
-| `sortOrder` | `String` | No | `"desc"` | Sorting hierarchy: `"desc"` (higher score is better; arcade points) or `"asc"` (lower score is better; time trials / golf strokes). |
-| `scoreType` | `String` | No | `"integer"` | Data representation: `"integer"` (discrete points), `"decimal"` (floating points), `"duration_ms"` (elapsed milliseconds), or `"currency"`. |
+| `id` | `String` | **Yes** | — | Unique leaderboard identifier matching regex `^[a-zA-Z0-9_-]+$`. |
+| `name` | `Dict` \| `String` | **Yes** | — | Localized leaderboard display title. Plain text. |
+| `description` | `Dict` \| `String` | No | `{"en-US": ""}` | Localized description of rules. Plain text. |
+| `group` | `Dict` \| `String` | No | `{"en-US": "General"}` | Localized grouping header for categorizing leaderboards into sets. |
+| `sortOrder` | `String` | No | `"desc"` | Hierarchy: `"desc"` (higher is better) or `"asc"` (lower is better). |
+| `scoreType` | `String` | No | `"integer"` | Data representation: `"integer"`, `"decimal"`, `"duration_ms"`, or `"currency"`. |
 | `decimalPlaces` | `Integer` | No | `0` (or `3` for `duration_ms`) | Number of decimal places rendered in portal views (0 to 3). |
-| `unit` | `String` | No | `"pts"` | Formatted unit label displayed adjacent to numerical scores (e.g. `"pts"`, `"s"`, `"moves"`, `"$"`). |
-| `unitPosition` | `String` | No | `"suffix"` | Placement of unit symbol: `"suffix"` (`150 pts`, `42.5 s`) or `"prefix"` (`$ 500`). |
-| `aggregation` | `String` | No | `"max"` | Best-score aggregation rule: `"max"` (highest record kept), `"min"` (lowest record kept), `"latest"` (most recent submission), or `"sum"`. |
-| `tieBreaker` | `String` | No | `"first_achieved"` | Deterministic tie-breaker rule when scores match: `"first_achieved"` (earlier `updatedAt` wins) or `"latest_achieved"` (most recent wins). |
-| `version` | `Integer` | No | `1` | Monotonic schema/scoring epoch integer. Incrementing isolates competition epochs without deleting legacy archive history. |
+| `unit` | `String` | No | `"pts"` | Formatted unit label (max 10 characters). Plain text. |
+| `unitPosition` | `String` | No | `"suffix"` | Placement of unit symbol: `"suffix"` or `"prefix"`. |
+| `aggregation` | `String` | No | `"max"` | Best-score aggregation rule: `"max"`, `"min"`, `"latest"`, or `"sum"`. |
+| `tieBreaker` | `String` | No | `"first_achieved"` | Deterministic tie-breaker rule: `"first_achieved"` (earlier `updatedAt` wins) or `"latest_achieved"`. |
+| `version` | `Integer` | No | `1` | Monotonic schema/scoring epoch integer $\ge 1$. |
 | `resetPolicy` | `String` | No | `"never"` | Recurrence cadence: `"never"`, `"daily"`, `"weekly"`, or `"seasonal"`. |
-| `resetSchedule` | `String (Cron)`| No | — | Optional 5-field UTC Cron expression defining exact reset trigger (e.g. `"0 0 * * 1"` for Mondays 00:00 UTC). |
-| `archivePolicy` | `String` | No | `"snapshot"` | Archival behavior upon reset: `"snapshot"` (persists top-100 historical snapshot) or `"purge"`. |
-| `metadataSchema` | `Dict` | No | `{}` | Dictionary defining allowed metadata attributes submitted with score (e.g., `moves: { type: "integer", label: { en-US: "Moves" } }`). Enforces max 2KB payload size. |
+| `resetSchedule` | `String (Cron)`| No | — | 5-field UTC Cron expression. Must enforce a minimum recurrence interval of $\ge 24\text{ hours}$. |
+| `archivePolicy` | `String` | No | `"snapshot"` | Archival behavior upon reset: `"snapshot"` (persists top-100 snapshot) or `"purge"`. |
+| `metadataSchema` | `Dict` | No | `{}` | Dict defining custom score attributes. Submissions bounded to max 2KB with prototype keys stripped. |
 
 ---
 
-### 4.5. Compiled Central Registry Index (`games.json` v2.2 Structure)
+### 4.5. Compiled Central Registry Index (`games.json` v2.3 Structure)
 
 ```json
 {
@@ -464,7 +486,7 @@ When a player plays in guest mode and later registers or signs in:
 2. Upon receiving `onPlayerChanged` (guest $\rightarrow$ authenticated user), the SDK automatically issues:
    `POST /api/v1/games/:gameId/migrate-guest`
    with the cached unlock list and score payloads.
-3. The backend reconciles the payload using `ON CONFLICT DO NOTHING` for achievements and personal best upsert logic for leaderboards, ensuring guest progress is promoted without overwriting higher authenticated records.
+3. The backend reconciles the payload strictly under the authenticated session (`getAuthenticatedUser(req)`), ignoring any client-declared `userId`, and executes monotonic personal best upserts.
 
 ---
 
@@ -527,13 +549,14 @@ When a player plays in guest mode and later registers or signs in:
 
 ## 7. Migration Plan & P-001 Supersession Steps
 
-1. **Formal Acceptance**: Ratify P-006 via decision record `D-009-accept-declarative-services-spec-v2-2.md`, formally marking P-001 as `superseded`.
-2. **Contract Update**: Update [`/game_integration.md`](/game_integration.md) to codify the v2.2.0 schema with the comprehensive property tables.
+1. **Formal Acceptance**: Ratify P-006 via decision record `D-009-accept-declarative-services-spec-v2-3.md`, formally marking P-001 as `superseded`.
+2. **Contract Update**: Update [`/game_integration.md`](/game_integration.md) to codify the v2.3.0 schema with the comprehensive property tables and security constraints.
 3. **Database Schema & Indexing**: Update `portal/backend/src/schema.ts` to add composite B-tree indexes on `(gameId, leaderboardId, score, updatedAt)`.
 4. **Backend Implementation**:
    - Refactor `server.ts` to scale `increment` by manifest `maxSteps`.
    - Implement `aroundPlayer` rank windowing and batch unlock endpoints.
+   - Enforce 2KB metadata limits and strip prototype pollution keys.
    - Remove hardcoded anti-cheat heuristics (`maxPossiblePointsPerSec`).
-5. **Registration Compiler**: Update `platform/scripts/register-game.sh` to validate `specVersion: "2.2.0"` and compile `services` into `platform/registry/games.json`.
+5. **Registration Compiler**: Update `platform/scripts/register-game.sh` to validate `specVersion: "2.3.0"` and compile `services` into `platform/registry/games.json` with strict icon/path sanitization.
 6. **Testbed Manifest Population**: Populate `game.yaml` files across `games/2048`, `games/hextris`, `games/adarkroom`, `games/BrowserQuest`, `games/supertux`.
 7. **Frontend Dynamic Ingestion**: Update portal views (`AchievementsView.tsx`, `LeaderboardsView.tsx`) to consume dynamic registry data and eliminate static mocks.
