@@ -29,6 +29,7 @@ The memory catalog is structured as a single self-contained Knowledge Bundle loc
   architecture.md      # Platform architecture and routing design
   game_integration.md  # Contract and requirements for game developers
   cli_ops.md           # CLI commands and internal scripts documentation
+  invariants/          # Subdirectory for permanent platform invariants (INV-###)
   proposals/           # Subdirectory for design proposals and RFCs (P-###)
   decisions/           # Subdirectory for architectural decisions (D-###)
   findings/            # Subdirectory for static findings and analysis (F-###)
@@ -45,28 +46,50 @@ Every markdown concept file in this bundle must declare one of the following `ty
 1. **`Specification`**: For documents defining developer standards, integration contracts, or guidelines (e.g. `game_integration.md`, `memory_spec.md`).
 2. **`Architecture`**: For documentation explaining system design, network configurations, and routing topology (e.g. `architecture.md`).
 3. **`Reference`**: For functional user manuals, command-line usage logs, or operational runbooks (e.g. `cli_ops.md`).
-4. **`Proposal`**: For design proposals and specification RFCs. Uses ID format `P-###-<slug>.md`.
-5. **`Decision`**: For architectural design choices and consensus records. Uses ID format `D-###-<slug>.md`.
-6. **`Finding`**: For codebase analysis findings, audits, or performance metrics. Uses ID format `F-###-<slug>.md`.
-7. **`Investigation`**: For debugging tracks, diagnostics, and issue tracking. Uses ID format `I-###-<slug>.md`.
-8. **`Runbook`**: For step-by-step developer checklists, operational procedures, or game integration guides. Uses ID format `R-###-<slug>.md`.
-9. **`Roadmap`**: For phased implementation milestones, tracking active platform horizons, and capability delivery schedules. Uses filename `roadmap.md` in the bundle root or `roadmaps/ROADMAP-###.md`.
+4. **`Invariant`**: For permanent normative system constraints, runtime safety invariants, and architectural rules. Uses ID format `INV-###-<slug>.md`.
+5. **`Proposal`**: For design proposals and specification RFCs. Uses ID format `P-###-<slug>.md`.
+6. **`Decision`**: For architectural design choices and consensus records. Uses ID format `D-###-<slug>.md`.
+7. **`Finding`**: For codebase analysis findings, audits, or performance metrics. Uses ID format `F-###-<slug>.md`.
+8. **`Investigation`**: For debugging tracks, diagnostics, and issue tracking. Uses ID format `I-###-<slug>.md`.
+9. **`Runbook`**: For step-by-step developer checklists, operational procedures, or game integration guides. Uses ID format `R-###-<slug>.md`.
+10. **`Roadmap`**: For phased implementation milestones, tracking active platform horizons, and capability delivery schedules. Uses filename `roadmap.md` in the bundle root or `roadmaps/ROADMAP-###.md`.
 
 ---
 
 ## 3. Proposal Guidelines
 
-Proposals represent architectural reviews or design transitions. They must follow these rules:
+Proposals represent architectural reviews, feature RFCs, or design transitions. They must adhere to the **Spec-Driven Development (SDD)** structure:
 * **Naming**: Saved under `proposals/P-###-<title_slug>.md` where `###` is a sequential 3-digit padded number.
 * **Frontmatter Metadata**:
   * `type: Proposal` (Required)
   * `proposal_id`: String (e.g., `P-001`)
-  * `status`: Must be one of `proposed` (open for feedback), `accepted` (approved), or `rejected` (declined).
-* **Cross-References**: Active proposals should link back to the architecture or specs they influence.
+  * `status`: Must be one of `proposed` (open for feedback), `accepted` (approved), `rejected` (declined), or `superseded`.
+* **Standard 4-Section Layout**:
+  1. `## 1. Context & Motivation`: Background, existing limitations, and architectural trade-offs.
+  2. `## 2. Requirements & Acceptance Criteria (EARS)`: System-boundary criteria formatted strictly in EARS syntax (`WHEN [event] THEN [system] SHALL [response]`).
+  3. `## 3. Technical Design & Schemas`: Architecture diagrams (`mermaid`), data models, RPC envelopes, and routing rules.
+  4. `## 4. Implementation Tasks`: 2-level hierarchical checkbox checklist (`- [ ] 1.1`, `- [ ] 1.2`) mapped to EARS requirements and including automated test verification.
 
 ---
 
-## 4. Decision Guidelines
+## 4. Invariant Guidelines
+
+Invariants represent permanent, non-negotiable architectural constraints, runtime safety guarantees, and system boundaries:
+* **Naming**: Saved under `invariants/INV-###-<title_slug>.md` where `###` is a sequential 3-digit padded number.
+* **Frontmatter Metadata**:
+  * `type: Invariant` (Required)
+  * `invariant_id`: String (e.g., `INV-001`)
+  * `category`: One of `schema`, `storage`, `network`, `security`, `sdk`, or `lifecycle`.
+  * `status`: Must be one of `active` or `deprecated`.
+  * `origin`: Reference to originating proposal, finding, or investigation (e.g., `P-007`, `F-005`).
+* **Standard Layout**:
+  1. `## 1. Statement`: Normative rule statement that agents and developers MUST NOT violate.
+  2. `## 2. Rationale & Historical Incident`: Context and historical incident justifying the rule.
+  3. `## 3. Enforcement & Verification`: Automated verification mechanisms (linting, schema validation, test suites).
+
+---
+
+## 5. Decision Guidelines
 
 Decisions capture choices made during project execution. They must follow these rules:
 * **Naming**: Saved under `decisions/D-###-<title_slug>.md` where `###` is a sequential 3-digit padded number.
@@ -77,7 +100,7 @@ Decisions capture choices made during project execution. They must follow these 
 
 ---
 
-## 5. Investigation Guidelines
+## 6. Investigation Guidelines
 
 Investigations record active diagnostic runs, debugging logs, and investigations of anomalous behavior. They must follow these rules:
 * **Naming**: Saved under `investigations/I-###-<title_slug>.md` where `###` is a sequential 3-digit padded number.
@@ -90,7 +113,7 @@ Investigations record active diagnostic runs, debugging logs, and investigations
 
 ---
 
-## 6. Finding Guidelines
+## 7. Finding Guidelines
 
 Findings record static code audits, static analyses, or structural insights. They must follow these rules:
 * **Naming**: Saved under `findings/F-###-<title_slug>.md` where `###` is a sequential 3-digit padded number.
@@ -98,6 +121,8 @@ Findings record static code audits, static analyses, or structural insights. The
   * `type: Finding` (Required)
   * `finding_id`: String (e.g., `F-001`)
   * `status`: Must be one of `active` (unresolved vulnerability or issue) or `resolved`.
+* **Standard Structure**: Must include an explicit **EARS Failure Condition** (`GIVEN ... WHEN ... THEN ... WHEREAS system SHALL ...`) and a remediation/verification plan.
+
 
 ---
 

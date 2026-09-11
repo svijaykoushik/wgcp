@@ -1,6 +1,7 @@
 # Proposals Update Log
 
 ## 2026-09-11
+* **Creation & Acceptance**: Added proposal [`P-008-spec-driven-development-workflow-harmonization.md`](/proposals/P-008-spec-driven-development-workflow-harmonization.md) defining the integration of EARS requirements syntax, hierarchical task execution models, and dedicated `Invariant` concept types (`INV-###`) into WGCP memory artifacts. Approved and marked `accepted`.
 * **Creation & Acceptance**: Added proposal [`P-007-graceful-game-exit-handshake-protocol.md`](/proposals/P-007-graceful-game-exit-handshake-protocol.md) specifying the `WGCP_PREPARE_EXIT` and `WGCP_PREPARE_EXIT_ACK` teardown handshake to eliminate asynchronous save drops during iframe unmounts. Approved and marked `accepted`.
 
 ## 2026-09-03

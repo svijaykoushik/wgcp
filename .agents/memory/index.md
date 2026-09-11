@@ -15,9 +15,11 @@ This directory houses the structured memory documents for the Web Game Console P
 
 ## Categories & Subdirectories
 
+* [Invariants Index](invariants/) - Subdirectory index of permanent platform invariants, safety rules, and architectural constraints.
 * [Decisions Index](decisions/) - Subdirectory index of design decisions and architecture consensus records.
 * [Proposals Index](proposals/) - Subdirectory index of design proposals and RFC specifications.
 * [Findings Index](findings/) - Subdirectory index of code audits, static analyses, and platform reports.
 * [Investigations Index](investigations/) - Subdirectory index of active debugging sessions and issue tracking.
 * [Runbooks Index](runbooks/) - Subdirectory index of operational runbooks, checklists, and integration guides.
+
 

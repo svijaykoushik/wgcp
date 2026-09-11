@@ -1,6 +1,7 @@
 # Investigations Update Log
 
 ## 2026-09-11
+* **Creation**: Added [`I-014-spec-driven-development-evaluation-and-synthesis.md`](/investigations/I-014-spec-driven-development-evaluation-and-synthesis.md) documenting the evaluation of Spec-Driven Development (SDD) trade-offs, AI agent performance multipliers, and workflow harmonization with OKF v0.2.
 * **Creation**: Added [`I-013-supertux-unload-save-sync-failure.md`](/investigations/I-013-supertux-unload-save-sync-failure.md) detailing the diagnostics into why SuperTux game saves do not save correctly and fail to trigger cloud synchronization during game unload.
 
 ## 2026-09-10

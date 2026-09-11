@@ -78,7 +78,34 @@ This proposal defines the **Game Registry Specification (v2.3)** and the declara
 
 ---
 
-## 2. P-001 Baseline & What Changes in v2.3
+## 2. Requirements & Acceptance Criteria (EARS)
+
+### Feature: Declarative Manifest Validation & Compilation
+* **R1.1 (Manifest Schema Validation)**:
+  * `WHEN a game manifest is registered via platform.sh THEN the registration compiler SHALL validate specVersion: "2.3.0" against the declarative achievements and leaderboards schema.`
+* **R1.2 (Security Sanitization)**:
+  * `WHEN compiling icons and asset strings in game.yaml THEN the compiler SHALL reject directory traversal sequences (../, \\) and enforce single Unicode grapheme or relative path constraints.`
+
+### Feature: Achievements Runtime & State Sync
+* **R2.1 (Atomic Batch Unlock)**:
+  * `WHEN a game client submits an unlockBatch envelope with multiple achievement IDs THEN the backend SHALL persist all valid unlocks in a single atomic transaction and return the updated progression state.`
+* **R2.2 (Secret Trophy Masking)**:
+  * `WHILE an achievement has hidden: true AND is not yet unlocked by the authenticated user THEN SDK query endpoints and portal views SHALL mask its name, summary, and description.`
+* **R2.3 (Step Progress Calculation)**:
+  * `WHEN a game submits an increment progress event for a stepped achievement THEN the backend SHALL compute completion percentage as (currentSteps / maxSteps) * 100.`
+
+### Feature: Leaderboards & Ranking
+* **R3.1 (Multi-Dimensional Ordering & Tie-Breaking)**:
+  * `WHEN evaluating leaderboard ranks for sortOrder: "desc" THEN the backend SHALL order by score DESC, updated_at ASC; WHEN sortOrder: "asc" THEN the backend SHALL order by score ASC, updated_at ASC.`
+* **R3.2 (Around-Player Rank Windowing)**:
+  * `WHEN a client requests leaderboard scores with window: "around_player" AND radius: N THEN the API SHALL return the requesting user's score centered within a +/- N rank window.`
+* **R3.3 (Payload Hygiene & Metadata Bounding)**:
+  * `WHEN a leaderboard score submission includes a metadata JSON payload THEN the backend SHALL validate that the payload length <= 2048 bytes and strip prototype-polluting keys (__proto__, constructor).`
+
+---
+
+## 3. P-001 Baseline & What Changes in v2.3
+
 
 Under [P-001](/proposals/P-001-game-registry-spec-v2.md), WGCP adopted an F-Droid v2-inspired decoupled registry structure (`repo` metadata, separated `metadata` and `releases` blocks, inline localization dictionaries).
 
@@ -560,3 +587,24 @@ When a player plays in guest mode and later registers or signs in:
 5. **Registration Compiler**: Update `platform/scripts/register-game.sh` to validate `specVersion: "2.3.0"` and compile `services` into `platform/registry/games.json` with strict icon/path sanitization.
 6. **Testbed Manifest Population**: Populate `game.yaml` files across `games/2048`, `games/hextris`, `games/adarkroom`, `games/BrowserQuest`, `games/supertux`.
 7. **Frontend Dynamic Ingestion**: Update portal views (`AchievementsView.tsx`, `LeaderboardsView.tsx`) to consume dynamic registry data and eliminate static mocks.
+
+---
+
+## 8. Implementation Tasks
+
+- [ ] 1. Platform Backend & Schema Migration
+  - [ ] 1.1 Update Drizzle database schema with composite B-tree indexes for leaderboards and BigInt millisecond timestamps (`INV-001`).
+  - [ ] 1.2 Implement Fastify route for atomic batch unlocks (`/api/v1/games/:id/achievements/unlock-batch`).
+  - [ ] 1.3 Implement around-player rank windowing and tie-breaker sorting (`ORDER BY score ASC/DESC, updated_at ASC`).
+  - [ ] 1.4 Enforce 2KB metadata payload bounding and prototype pollution sanitization in Fastify request schemas.
+- [ ] 2. Registry Compiler & CLI Tooling
+  - [ ] 2.1 Update `platform/scripts/register-game.sh` to validate `specVersion: "2.3.0"` and enforce icon/path security regex.
+  - [ ] 2.2 Rebuild `platform/registry/games.json` with declarative services blocks for testbed games (`2048`, `hextris`, `supertux`).
+- [ ] 3. SDK & Portal Integration
+  - [ ] 3.1 Update `sdk/src/achievements.ts` and `sdk/src/leaderboards.ts` with batch unlock and windowed queries.
+  - [ ] 3.2 Update `portal/frontend/src/views/AchievementsView.tsx` with secret trophy masking (`hidden: true`) and dynamic trophy rendering.
+  - [ ] 3.3 Update `portal/frontend/src/views/LeaderboardsView.tsx` with categorized grouping and around-player rank centering.
+- [ ] 4. Automated Verification & Testing
+  - [ ] 4.1 Write Vitest unit tests verifying step progress calculation, secret trophy masking, and tie-breaking sorting.
+  - [ ] 4.2 Write Playwright E2E integration tests validating achievements unlock popups and leaderboard score submissions in browser.
+
